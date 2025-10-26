@@ -1,21 +1,56 @@
 import java.util.*;
+import common.Edge;
+import common.FlightGraphInterface;
 
 /**
- * Graph class representing flight routes between airports.
- * Implemented using HashMap where:
- * - Key: Airport code (String)
- * - Value: List of edges (List<Edge>) representing outgoing flights
+ * LinkedListFlightGraph class representing flight routes between airports.
+ * Implemented using LinkedList where:
+ * - Each airport is represented as a node containing a LinkedList of edges
+ * - Airports are stored in a LinkedList of AirportNode objects
+ * - Each AirportNode contains the airport code and its outgoing flights
  */
-public class FlightGraph {
-    private Map<String, List<Edge>> adjacencyList;
-    private Set<String> airports;
+public class LinkedListFlightGraph implements FlightGraphInterface {
+    
+    /**
+     * Inner class representing an airport node
+     */
+    private static class AirportNode {
+        private String airportCode;
+        private LinkedList<Edge> outgoingFlights;
+        
+        public AirportNode(String airportCode) {
+            this.airportCode = airportCode;
+            this.outgoingFlights = new LinkedList<>();
+        }
+        
+        public String getAirportCode() {
+            return airportCode;
+        }
+        
+        public LinkedList<Edge> getOutgoingFlights() {
+            return outgoingFlights;
+        }
+        
+        public void addFlight(Edge edge) {
+            outgoingFlights.add(edge);
+        }
+        
+        public boolean hasFlights() {
+            return !outgoingFlights.isEmpty();
+        }
+        
+        public int getFlightCount() {
+            return outgoingFlights.size();
+        }
+    }
+    
+    private LinkedList<AirportNode> airports;
     
     /**
      * Constructor initializes empty graph
      */
-    public FlightGraph() {
-        this.adjacencyList = new HashMap<>();
-        this.airports = new HashSet<>();
+    public LinkedListFlightGraph() {
+        this.airports = new LinkedList<>();
     }
     
     /**
@@ -23,9 +58,8 @@ public class FlightGraph {
      * @param airportCode the airport code to add
      */
     public void addAirport(String airportCode) {
-        if (!adjacencyList.containsKey(airportCode)) {
-            adjacencyList.put(airportCode, new ArrayList<>());
-            airports.add(airportCode);
+        if (!hasAirport(airportCode)) {
+            airports.add(new AirportNode(airportCode));
         }
     }
     
@@ -45,8 +79,11 @@ public class FlightGraph {
         // Create new edge
         Edge edge = new Edge(destinationAirport, airline, weight);
         
-        // Add edge to adjacency list
-        adjacencyList.get(sourceAirport).add(edge);
+        // Find the source airport node and add the edge
+        AirportNode sourceNode = findAirportNode(sourceAirport);
+        if (sourceNode != null) {
+            sourceNode.addFlight(edge);
+        }
     }
     
     /**
@@ -71,12 +108,30 @@ public class FlightGraph {
     }
     
     /**
+     * Find an airport node by airport code
+     * @param airportCode the airport code to find
+     * @return the AirportNode or null if not found
+     */
+    private AirportNode findAirportNode(String airportCode) {
+        for (AirportNode node : airports) {
+            if (node.getAirportCode().equals(airportCode)) {
+                return node;
+            }
+        }
+        return null;
+    }
+    
+    /**
      * Get all outgoing flights from a specific airport
      * @param airportCode the source airport code
      * @return list of edges representing outgoing flights
      */
     public List<Edge> getFlightsFrom(String airportCode) {
-        return adjacencyList.getOrDefault(airportCode, new ArrayList<>());
+        AirportNode node = findAirportNode(airportCode);
+        if (node != null) {
+            return new ArrayList<>(node.getOutgoingFlights());
+        }
+        return new ArrayList<>();
     }
     
     /**
@@ -84,7 +139,11 @@ public class FlightGraph {
      * @return set of all airport codes
      */
     public Set<String> getAllAirports() {
-        return new HashSet<>(airports);
+        Set<String> airportCodes = new HashSet<>();
+        for (AirportNode node : airports) {
+            airportCodes.add(node.getAirportCode());
+        }
+        return airportCodes;
     }
     
     /**
@@ -93,7 +152,7 @@ public class FlightGraph {
      * @return true if airport exists, false otherwise
      */
     public boolean hasAirport(String airportCode) {
-        return airports.contains(airportCode);
+        return findAirportNode(airportCode) != null;
     }
     
     /**
@@ -110,8 +169,8 @@ public class FlightGraph {
      */
     public int getFlightCount() {
         int totalFlights = 0;
-        for (List<Edge> edges : adjacencyList.values()) {
-            totalFlights += edges.size();
+        for (AirportNode node : airports) {
+            totalFlights += node.getFlightCount();
         }
         return totalFlights;
     }
@@ -123,8 +182,8 @@ public class FlightGraph {
      */
     public List<Edge> getFlightsTo(String destinationAirport) {
         List<Edge> incomingFlights = new ArrayList<>();
-        for (List<Edge> edges : adjacencyList.values()) {
-            for (Edge edge : edges) {
+        for (AirportNode node : airports) {
+            for (Edge edge : node.getOutgoingFlights()) {
                 if (edge.getDestinationAirport().equals(destinationAirport)) {
                     incomingFlights.add(edge);
                 }
@@ -140,11 +199,13 @@ public class FlightGraph {
      * @return the edge with the lowest weight, or null if no direct route exists
      */
     public Edge getBestFlight(String sourceAirport, String destinationAirport) {
-        List<Edge> flights = getFlightsFrom(sourceAirport);
+        AirportNode sourceNode = findAirportNode(sourceAirport);
+        if (sourceNode == null) return null;
+        
         Edge bestFlight = null;
         double bestWeight = Double.MAX_VALUE;
         
-        for (Edge edge : flights) {
+        for (Edge edge : sourceNode.getOutgoingFlights()) {
             if (edge.getDestinationAirport().equals(destinationAirport) && 
                 edge.getWeight() < bestWeight) {
                 bestFlight = edge;
@@ -162,9 +223,11 @@ public class FlightGraph {
      */
     public Set<String> getAirlinesFrom(String airportCode) {
         Set<String> airlines = new HashSet<>();
-        List<Edge> flights = getFlightsFrom(airportCode);
-        for (Edge edge : flights) {
-            airlines.add(edge.getAirline());
+        AirportNode node = findAirportNode(airportCode);
+        if (node != null) {
+            for (Edge edge : node.getOutgoingFlights()) {
+                airlines.add(edge.getAirline());
+            }
         }
         return airlines;
     }
@@ -173,15 +236,14 @@ public class FlightGraph {
      * Print graph statistics
      */
     public void printGraphStats() {
-        System.out.println("=== Flight Graph Statistics ===");
+        System.out.println("=== Flight Graph Statistics (LinkedList Implementation) ===");
         System.out.println("Total Airports: " + getAirportCount());
         System.out.println("Total Flight Routes: " + getFlightCount());
         System.out.println();
         
         System.out.println("Airports in the graph:");
-        for (String airport : airports) {
-            int outgoingFlights = getFlightsFrom(airport).size();
-            System.out.println("  " + airport + " (" + outgoingFlights + " outgoing flights)");
+        for (AirportNode node : airports) {
+            System.out.println("  " + node.getAirportCode() + " (" + node.getFlightCount() + " outgoing flights)");
         }
     }
     
@@ -189,14 +251,13 @@ public class FlightGraph {
      * Print detailed graph structure
      */
     public void printGraph() {
-        System.out.println("=== Flight Graph Structure ===");
-        for (String airport : airports) {
-            System.out.println(airport + ":");
-            List<Edge> flights = getFlightsFrom(airport);
-            if (flights.isEmpty()) {
+        System.out.println("=== Flight Graph Structure (LinkedList Implementation) ===");
+        for (AirportNode node : airports) {
+            System.out.println(node.getAirportCode() + ":");
+            if (!node.hasFlights()) {
                 System.out.println("  No outgoing flights");
             } else {
-                for (Edge edge : flights) {
+                for (Edge edge : node.getOutgoingFlights()) {
                     System.out.println("  -> " + edge);
                 }
             }
@@ -208,7 +269,37 @@ public class FlightGraph {
      * Clear all data from the graph
      */
     public void clear() {
-        adjacencyList.clear();
         airports.clear();
+    }
+    
+    /**
+     * Get airports sorted by number of outgoing flights (busiest first)
+     * @return list of airport codes sorted by flight count
+     */
+    public List<String> getAirportsByFlightCount() {
+        List<AirportNode> sortedNodes = new ArrayList<>(airports);
+        sortedNodes.sort((a, b) -> Integer.compare(b.getFlightCount(), a.getFlightCount()));
+        
+        List<String> result = new ArrayList<>();
+        for (AirportNode node : sortedNodes) {
+            result.add(node.getAirportCode());
+        }
+        return result;
+    }
+    
+    /**
+     * Find the busiest airport (most outgoing flights)
+     * @return airport code of the busiest airport
+     */
+    public String getBusiestAirport() {
+        if (airports.isEmpty()) return null;
+        
+        AirportNode busiest = airports.get(0);
+        for (AirportNode node : airports) {
+            if (node.getFlightCount() > busiest.getFlightCount()) {
+                busiest = node;
+            }
+        }
+        return busiest.getAirportCode();
     }
 }

@@ -1,21 +1,50 @@
 import java.io.*;
 import java.util.*;
+import common.FlightGraphInterface;
 
 /**
- * CSV Parser as an alternative to Excel parsing
- * This can be used if you convert your Excel file to CSV format
+ * CSV Parser for Flight Graph implementations
+ * This parser reads flight data from CSV file and populates the graph
+ * Used by both HashMap and LinkedList implementations
  */
 public class CSVParser {
     
     /**
-     * Parse CSV file and populate the flight graph
+     * Parse CSV file and populate the flight graph (HashMap implementation)
      * @param filePath path to the CSV file
-     * @return populated FlightGraph object
+     * @return populated HashMapFlightGraph object
      * @throws IOException if file cannot be read
      */
-    public static FlightGraph parseCSVToGraph(String filePath) throws IOException {
-        FlightGraph graph = new FlightGraph();
-        
+    public static HashMapFlightGraph parseCSVToGraph(String filePath) throws IOException {
+        HashMapFlightGraph graph = new HashMapFlightGraph();
+        return parseCSVToGraph(filePath, graph);
+    }
+    
+    /**
+     * Parse CSV file and populate the LinkedList-based flight graph
+     * @param filePath path to the CSV file
+     * @return populated LinkedListGraph.FlightGraph object
+     * @throws IOException if file cannot be read
+     */
+    public static FlightGraphInterface parseCSVToLinkedListGraph(String filePath) throws IOException {
+        // Create LinkedList-based graph using reflection to avoid import issues
+        try {
+            Class<?> linkedListGraphClass = Class.forName("LinkedListGraph.LinkedListFlightGraph");
+            FlightGraphInterface graph = (FlightGraphInterface) linkedListGraphClass.getDeclaredConstructor().newInstance();
+            return parseCSVToGraph(filePath, graph);
+        } catch (Exception e) {
+            throw new IOException("Failed to create LinkedList-based FlightGraph: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Generic method to parse CSV and populate any FlightGraph implementation
+     * @param filePath path to the CSV file
+     * @param graph the graph instance to populate
+     * @return populated graph object
+     * @throws IOException if file cannot be read
+     */
+    private static <T extends FlightGraphInterface> T parseCSVToGraph(String filePath, T graph) throws IOException {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             String[] headers = null;

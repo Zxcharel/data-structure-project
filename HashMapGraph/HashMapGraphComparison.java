@@ -1,12 +1,12 @@
 import common.Edge;
 
 /**
- * Comparison between HashMap and LinkedList implementations
+ * Comparison utilities for HashMap implementation
  */
-public class GraphComparison {
+public class HashMapGraphComparison {
     
     public static void main(String[] args) {
-        System.out.println("=== Graph Implementation Comparison ===");
+        System.out.println("=== HashMap Graph Implementation Analysis ===");
         System.out.println("HashMap vs LinkedList Implementation");
         System.out.println();
         
@@ -23,24 +23,24 @@ public class GraphComparison {
     private static void testWithSampleData() {
         System.out.println("=== Testing with Sample Data ===");
         
-        // Create LinkedList-based graph
-        LinkedListFlightGraph linkedListGraph = new LinkedListFlightGraph();
+        // Create HashMap-based graph
+        HashMapFlightGraph hashMapGraph = new HashMapFlightGraph();
         
         // Add sample flights
-        linkedListGraph.addFlightWithRatings("LAX", "JFK", "Delta Airlines", 4.5, 3.8, 4.2, 4.0, 3.5);
-        linkedListGraph.addFlightWithRatings("LAX", "JFK", "American Airlines", 4.2, 4.0, 3.5, 4.1, 3.8);
-        linkedListGraph.addFlightWithRatings("JFK", "LAX", "Delta Airlines", 4.5, 3.8, 4.2, 4.0, 3.5);
-        linkedListGraph.addFlightWithRatings("LAX", "ORD", "United Airlines", 3.8, 4.2, 3.0, 3.9, 3.2);
-        linkedListGraph.addFlightWithRatings("ORD", "JFK", "American Airlines", 4.0, 3.9, 3.8, 4.2, 3.6);
+        hashMapGraph.addFlightWithRatings("LAX", "JFK", "Delta Airlines", 4.5, 3.8, 4.2, 4.0, 3.5);
+        hashMapGraph.addFlightWithRatings("LAX", "JFK", "American Airlines", 4.2, 4.0, 3.5, 4.1, 3.8);
+        hashMapGraph.addFlightWithRatings("JFK", "LAX", "Delta Airlines", 4.5, 3.8, 4.2, 4.0, 3.5);
+        hashMapGraph.addFlightWithRatings("LAX", "ORD", "United Airlines", 3.8, 4.2, 3.0, 3.9, 3.2);
+        hashMapGraph.addFlightWithRatings("ORD", "JFK", "American Airlines", 4.0, 3.9, 3.8, 4.2, 3.6);
         
         // Display results
-        linkedListGraph.printGraphStats();
+        hashMapGraph.printGraphStats();
         
         // Show implementation differences
         showImplementationDifferences();
         
         // Performance comparison
-        performanceComparison(linkedListGraph);
+        performanceComparison(hashMapGraph);
     }
     
     private static void showImplementationDifferences() {
@@ -63,7 +63,7 @@ public class GraphComparison {
         System.out.println("  - Best for: Sequential processing, memory-constrained environments");
     }
     
-    private static void performanceComparison(LinkedListFlightGraph graph) {
+    private static void performanceComparison(HashMapFlightGraph graph) {
         System.out.println("\n=== Performance Comparison ===");
         
         // Test search operations
@@ -74,7 +74,7 @@ public class GraphComparison {
         long endTime = System.nanoTime();
         long searchTime = endTime - startTime;
         
-        System.out.println("LinkedList Search Performance:");
+        System.out.println("HashMap Search Performance:");
         System.out.println("  - Search time for '" + testAirport + "': " + 
                           String.format("%.2f", searchTime / 1_000_000.0) + " ms");
         System.out.println("  - Found " + flights.size() + " flights");
@@ -92,10 +92,15 @@ public class GraphComparison {
         }
         
         System.out.println("\nTime Complexity Analysis:");
-        System.out.println("  - Add Airport: O(1) - insertion at end");
-        System.out.println("  - Add Flight: O(n) - need to find source airport");
-        System.out.println("  - Get Flights From: O(n) - linear search for airport");
-        System.out.println("  - Search Airport: O(n) - sequential search");
-        System.out.println("  - Get All Airports: O(n) - traverse entire list");
+        System.out.println("  - Add Airport: O(1) - HashMap insertion");
+        System.out.println("  - Add Flight: O(1) - HashMap lookup + ArrayList append");
+        System.out.println("  - Get Flights From: O(1) - HashMap lookup");
+        System.out.println("  - Search Airport: O(1) - HashMap lookup");
+        System.out.println("  - Get All Airports: O(n) - HashMap keySet iteration");
+        
+        System.out.println("\nSpace Complexity Analysis:");
+        System.out.println("  - Overall: O(V + E) where V = vertices (airports), E = edges (flights)");
+        System.out.println("  - Per Airport: O(1) + O(flights_from_airport)");
+        System.out.println("  - Memory Overhead: Hash table overhead + ArrayList overhead");
     }
 }

@@ -1,28 +1,63 @@
-# Flight Graph Implementation
+# Flight Graph Data Structure Project
 
-This project implements a graph data structure using HashMap to represent flight routes between airports, populated from CSV data.
+This project implements two different graph data structures to represent flight routes between airports, populated from CSV data. It demonstrates the differences between HashMap and LinkedList implementations for graph representation.
 
 ## Project Structure
 
-- `Edge.java` - Represents a flight route between two airports
-- `FlightGraph.java` - Main graph class using HashMap implementation
-- `CSVParser.java` - Parses CSV files and populates the graph (no dependencies required)
-- `LoadYourData.java` - Main program to load and analyze your flight data
-- `cleaned_flights.csv` - Your actual flight data (converted from Excel)
-- `README.md` - This documentation file
+```
+data-structure-project/
+├── common/                          # Shared classes used by both implementations
+│   ├── Edge.java                   # Edge class representing flight routes
+│   ├── FlightGraphInterface.java   # Common interface for both implementations
+│   └── package-info.java           # Package documentation
+├── HashMapGraph/                    # HashMap-based implementation
+│   ├── HashMapFlightGraph.java     # HashMap implementation of FlightGraph
+│   ├── HashMapGraphDemo.java       # Demo program for HashMap implementation
+│   └── HashMapGraphComparison.java # Performance comparison utilities
+├── LinkedListGraph/                 # LinkedList-based implementation
+│   ├── LinkedListFlightGraph.java  # LinkedList implementation of FlightGraph
+│   ├── LinkedListGraphDemo.java    # Demo program for LinkedList implementation
+│   └── GraphComparison.java        # Performance comparison utilities
+├── CSVParser.java                   # Unified CSV parser for both implementations
+├── LoadYourData.java               # Main program to load and analyze flight data
+├── cleaned_flights.csv              # Flight data (converted from Excel)
+└── README.md                       # This documentation file
+```
 
-## Graph Representation
+## Graph Implementations
 
-### Vertices (Nodes)
-- Represent airports (identified by airport codes)
-- Stored as keys in the HashMap
+### 1. HashMap Implementation (HashMapGraph Directory)
+- **File**: `HashMapGraph/HashMapFlightGraph.java`
+- **Data Structure**: `HashMap<String, List<Edge>>`
+- **Airport Storage**: Keys in HashMap
+- **Edge Storage**: ArrayList in HashMap values
+- **Search Time**: O(1) average
+- **Best for**: Frequent random access, dense graphs
 
-### Edges
-- Represent direct flight routes between airports
-- Each edge stores:
-  - Destination airport code
-  - Airline name
-  - Weight rating (calculated from multiple factors)
+### 2. LinkedList Implementation (LinkedListGraph Directory)
+- **File**: `LinkedListGraph/LinkedListFlightGraph.java`
+- **Data Structure**: `LinkedList<AirportNode>`
+- **Airport Storage**: AirportNode objects in LinkedList
+- **Edge Storage**: LinkedList within each AirportNode
+- **Search Time**: O(n) linear search
+- **Best for**: Sequential processing, memory-constrained environments
+
+## Common Components
+
+### Edge Class (`common/Edge.java`)
+Represents a flight route between two airports with:
+- Destination airport code
+- Airline name
+- Weight rating (calculated from multiple factors)
+- Static methods for weight calculation
+
+### CSVParser Class (`CSVParser.java`)
+Handles CSV file parsing and graph population:
+- Flexible column mapping based on header names
+- Error handling for invalid data
+- Support for quoted CSV values
+- Automatic weight calculation from ratings
+- Works with both HashMap and LinkedList implementations
 
 ## Weight Calculation
 
@@ -34,7 +69,7 @@ Higher ratings correspond to lower weights (better airlines = smaller weight):
 - Rating: 2 = Weight: 4
 - Rating: 1 = Weight: 5
 
-Formula: `Weight = 6 - Rating`
+**Formula**: `Weight = 6 - Rating`
 
 ### Combined Weight Calculation
 Each airline's total edge weight is calculated as a weighted average:
@@ -49,50 +84,54 @@ Weight Rating = (Overall_rating_weight × 0.4)
 
 ## How to Run
 
-### Quick Start
-```bash
-# Compile all classes
-javac *.java
-
-# Run with your flight data
-java LoadYourData
-```
-
 ### Prerequisites
 - Java 11 or higher
 - Your Excel file converted to CSV format (`cleaned_flights.csv`)
 
-### What LoadYourData Does
-- Loads your actual flight data from `cleaned_flights.csv`
-- Creates the graph with all airports and routes
-- Calculates weights using your specified formula
-- Shows comprehensive statistics and analysis
-- Displays the complete graph structure
+### Quick Start
+```bash
+# Compile all classes (including common package)
+javac common/*.java *.java HashMapGraph/*.java LinkedListGraph/*.java
 
-## Usage Example
+# Run HashMap implementation with your data
+java LoadYourData
 
-```java
-// Create a new graph
-FlightGraph graph = new FlightGraph();
+# Run HashMap implementation demo
+java HashMapGraphDemo
 
-// Add a flight with ratings (weight calculated automatically)
-graph.addFlightWithRatings(
-    "LAX", "JFK", "Delta Airlines",
-    4.5, 3.8, 4.2, 4.0, 3.5
-);
+# Run LinkedList implementation demo
+java LinkedListGraphDemo
 
-// Add a flight with pre-calculated weight
-graph.addFlight("LAX", "ORD", "United Airlines", 2.1);
-
-// Get all outgoing flights from an airport
-List<Edge> flights = graph.getFlightsFrom("LAX");
-
-// Find the best flight between two airports
-Edge bestFlight = graph.getBestFlight("LAX", "JFK");
-
-// Get graph statistics
-graph.printGraphStats();
+# Run performance comparison
+java HashMapGraphComparison
+java GraphComparison
 ```
+
+### What Each Program Does
+
+#### LoadYourData.java
+- Loads flight data from `cleaned_flights.csv`
+- Creates HashMap-based graph with all airports and routes
+- Shows comprehensive statistics and analysis
+- Displays complete graph structure
+
+#### HashMapGraphDemo.java
+- Demonstrates HashMap-based implementation
+- Shows HashMap-specific features (random access performance)
+- Compares performance characteristics
+- Loads data from `cleaned_flights.csv`
+
+#### LinkedListGraphDemo.java
+- Demonstrates LinkedList-based implementation
+- Shows LinkedList-specific features (busiest airports, sorted lists)
+- Compares performance characteristics
+- Loads data from `../cleaned_flights.csv`
+
+#### HashMapGraphComparison.java & GraphComparison.java
+- Compare HashMap vs LinkedList implementations
+- Show implementation differences
+- Provide performance analysis
+- Demonstrate time complexity characteristics
 
 ## CSV File Format
 
@@ -115,16 +154,36 @@ LAX,JFK,American Airlines,4.2,4.0,3.5,4.1,3.8
 
 **Note**: Convert your Excel file to CSV format in Excel (File → Save As → CSV).
 
-## Features
+## Implementation Comparison
 
-- **HashMap Implementation**: Efficient adjacency list representation
-- **Automatic Weight Calculation**: Converts ratings to weights using the specified formula
-- **Flexible CSV Parsing**: Automatically maps columns based on header names
-- **Graph Operations**: Find best flights, get airlines, statistics, etc.
-- **Error Handling**: Graceful handling of missing or invalid data
-- **Real Data Analysis**: Works with your actual flight dataset
+### HashMap Implementation
+**Advantages:**
+- O(1) average search time
+- Fast random access
+- Efficient for frequent lookups
+- Better for dense graphs
+
+**Disadvantages:**
+- Higher memory overhead
+- Hash collision handling
+- More complex implementation
+
+### LinkedList Implementation
+**Advantages:**
+- Memory efficient for sparse graphs
+- Good for sequential traversal
+- Simple implementation
+- O(1) insertion at end
+- No hash collisions
+
+**Disadvantages:**
+- O(n) search time for airports
+- O(n) access time for specific airports
+- Slower for random access patterns
 
 ## Graph Operations
+
+Both implementations support the same interface:
 
 - `addAirport(String airportCode)` - Add an airport
 - `addFlight(...)` - Add a flight route
@@ -135,6 +194,96 @@ LAX,JFK,American Airlines,4.2,4.0,3.5,4.1,3.8
 - `getAirlinesFrom(String airport)` - Get airlines from airport
 - `printGraphStats()` - Display statistics
 - `printGraph()` - Display full graph structure
+
+### LinkedList-Specific Operations
+- `getBusiestAirport()` - Find airport with most flights
+- `getAirportsByFlightCount()` - Get airports sorted by flight count
+
+## Performance Characteristics
+
+### HashMap Implementation
+- **Add Airport**: O(1) - HashMap insertion
+- **Add Flight**: O(1) - HashMap lookup + ArrayList append
+- **Get Flights From**: O(1) - HashMap lookup
+- **Search Airport**: O(1) - HashMap lookup
+- **Get All Airports**: O(n) - HashMap keySet iteration
+
+### LinkedList Implementation
+- **Add Airport**: O(1) - LinkedList insertion at end
+- **Add Flight**: O(n) - Need to find source airport
+- **Get Flights From**: O(n) - Need to find airport, then O(1) to get flights
+- **Search Airport**: O(n) - Linear search through LinkedList
+- **Get All Airports**: O(n) - Traverse entire LinkedList
+
+## Usage Examples
+
+### HashMap Implementation
+```java
+// Create a new HashMap-based graph
+HashMapFlightGraph graph = new HashMapFlightGraph();
+
+// Add a flight with ratings (weight calculated automatically)
+graph.addFlightWithRatings(
+    "LAX", "JFK", "Delta Airlines",
+    4.5, 3.8, 4.2, 4.0, 3.5
+);
+
+// Get all outgoing flights from an airport
+List<Edge> flights = graph.getFlightsFrom("LAX");
+
+// Find the best flight between two airports
+Edge bestFlight = graph.getBestFlight("LAX", "JFK");
+
+// Get graph statistics
+graph.printGraphStats();
+```
+
+### LinkedList Implementation
+```java
+// Create a new LinkedList-based graph
+LinkedListFlightGraph graph = new LinkedListFlightGraph();
+
+// Add a flight with ratings (weight calculated automatically)
+graph.addFlightWithRatings(
+    "LAX", "JFK", "Delta Airlines",
+    4.5, 3.8, 4.2, 4.0, 3.5
+);
+
+// Get busiest airport
+String busiest = graph.getBusiestAirport();
+
+// Get airports sorted by flight count
+List<String> airportsByCount = graph.getAirportsByFlightCount();
+
+// Get graph statistics
+graph.printGraphStats();
+```
+
+## Features
+
+- **Dual Implementation**: Both HashMap and LinkedList approaches
+- **Automatic Weight Calculation**: Converts ratings to weights using specified formula
+- **Flexible CSV Parsing**: Automatically maps columns based on header names
+- **Graph Operations**: Find best flights, get airlines, statistics, etc.
+- **Error Handling**: Graceful handling of missing or invalid data
+- **Real Data Analysis**: Works with actual flight datasets
+- **Performance Comparison**: Built-in tools to compare implementations
+- **Clean Architecture**: Common components shared between implementations
+
+## When to Use Each Implementation
+
+### Use HashMap Implementation When:
+- Frequent random access to specific airports
+- Dense graphs with many connections
+- Performance-critical applications requiring fast lookups
+- Working with large datasets where search time matters
+
+### Use LinkedList Implementation When:
+- Sparse graphs (few connections per airport)
+- Sequential processing of all airports
+- Memory-constrained environments
+- Educational purposes (simpler to understand)
+- Need LinkedList-specific features (sorted operations)
 
 ## Your Data Analysis Results
 

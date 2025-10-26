@@ -1,4 +1,5 @@
 import java.io.IOException;
+import common.Edge;
 
 /**
  * Demo to load your actual Excel data (converted to CSV)
@@ -11,7 +12,7 @@ public class LoadYourData {
             String csvFilePath = "cleaned_flights.csv"; // Your converted CSV file
             System.out.println("Loading your flight data from: " + csvFilePath);
             
-            FlightGraph graph = CSVParser.parseCSVToGraph(csvFilePath);
+            HashMapFlightGraph graph = CSVParser.parseCSVToGraph(csvFilePath);
             
             // Display comprehensive statistics
             System.out.println("\n=== Your Flight Data Analysis ===");
@@ -34,7 +35,7 @@ public class LoadYourData {
         }
     }
     
-    private static void analyzeFlightData(FlightGraph graph) {
+    private static void analyzeFlightData(HashMapFlightGraph graph) {
         System.out.println("\n=== Flight Data Analysis ===");
         
         // Find airports with most connections

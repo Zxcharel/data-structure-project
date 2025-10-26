@@ -4,25 +4,25 @@ import common.Edge;
 import common.FlightGraphInterface;
 
 /**
- * Main program to test the LinkedList-based FlightGraph implementation
+ * Main program to test the HashMap-based FlightGraph implementation
  */
-public class LinkedListGraphDemo {
+public class HashMapGraphDemo {
     
     public static void main(String[] args) {
         try {
             // Load flight data from CSV
-            String csvFilePath = "../src/cleaned_flights.csv"; // Path to your CSV file
+            String csvFilePath = "cleaned_flights.csv"; // Path to your CSV file
             System.out.println("Loading flight data from: " + csvFilePath);
             
-            LinkedListFlightGraph graph = (LinkedListFlightGraph) CSVParser.parseCSVToLinkedListGraph(csvFilePath);
+            HashMapFlightGraph graph = (HashMapFlightGraph) CSVParser.parseCSVToGraph(csvFilePath);
             
             // Display graph statistics
             graph.printGraphStats();
             
-            // Demonstrate LinkedList-specific features
-            demonstrateLinkedListFeatures(graph);
+            // Demonstrate HashMap-specific features
+            demonstrateHashMapFeatures(graph);
             
-            // Compare with HashMap implementation
+            // Compare with LinkedList implementation
             compareImplementations(graph);
             
         } catch (IOException e) {
@@ -35,28 +35,27 @@ public class LinkedListGraphDemo {
     }
     
     /**
-     * Demonstrate LinkedList-specific features
+     * Demonstrate HashMap-specific features
      */
-    private static void demonstrateLinkedListFeatures(FlightGraphInterface graph) {
-        System.out.println("\n=== LinkedList Implementation Features ===");
+    private static void demonstrateHashMapFeatures(FlightGraphInterface graph) {
+        System.out.println("\n=== HashMap Implementation Features ===");
         
-        // Show busiest airports
-        String busiestAirport = graph.getBusiestAirport();
-        if (busiestAirport != null) {
-            System.out.println("Busiest Airport: " + busiestAirport);
-            System.out.println("Outgoing flights: " + graph.getFlightsFrom(busiestAirport).size());
+        // Show random access capabilities
+        System.out.println("HashMap Random Access Performance:");
+        
+        // Test multiple random airport lookups
+        long startTime = System.nanoTime();
+        for (String airport : graph.getAllAirports()) {
+            var flights = graph.getFlightsFrom(airport);
+            if (flights.size() > 0) break; // Just test one to show O(1) access
         }
+        long endTime = System.nanoTime();
+        long accessTime = endTime - startTime;
         
-        // Show airports sorted by flight count
-        System.out.println("\nTop 10 Busiest Airports:");
-        List<String> airportsByFlightCount = graph.getAirportsByFlightCount();
-        for (int i = 0; i < Math.min(10, airportsByFlightCount.size()); i++) {
-            String airport = airportsByFlightCount.get(i);
-            int flightCount = graph.getFlightsFrom(airport).size();
-            System.out.println("  " + (i + 1) + ". " + airport + " (" + flightCount + " flights)");
-        }
+        System.out.println("  - Random airport access time: " + 
+                          String.format("%.2f", accessTime / 1_000_000.0) + " ms");
         
-        // Show sample graph structure (first 5 airports)
+        // Show graph structure (first 5 airports)
         System.out.println("\n=== Sample Graph Structure (First 5 Airports) ===");
         int count = 0;
         for (String airport : graph.getAllAirports()) {
@@ -75,10 +74,10 @@ public class LinkedListGraphDemo {
     }
     
     /**
-     * Compare LinkedList vs HashMap implementations
+     * Compare HashMap vs LinkedList implementations
      */
     private static void compareImplementations(FlightGraphInterface graph) {
-        System.out.println("\n=== LinkedList vs HashMap Comparison ===");
+        System.out.println("\n=== HashMap vs LinkedList Comparison ===");
         
         // Test search operations
         long startTime = System.nanoTime();
@@ -90,9 +89,10 @@ public class LinkedListGraphDemo {
         long endTime = System.nanoTime();
         long searchTime = endTime - startTime;
         
-        System.out.println("Search time for flights from '" + testAirport + "': " + 
+        System.out.println("HashMap Search Performance:");
+        System.out.println("  - Search time for flights from '" + testAirport + "': " + 
                           String.format("%.2f", searchTime / 1_000_000.0) + " ms");
-        System.out.println("Found " + flights.size() + " flights");
+        System.out.println("  - Found " + flights.size() + " flights");
         
         // Test finding best flight
         startTime = System.nanoTime();
@@ -101,18 +101,18 @@ public class LinkedListGraphDemo {
         long bestFlightTime = endTime - startTime;
         
         if (bestFlight != null) {
-            System.out.println("Best flight from London to Paris: " + bestFlight);
-            System.out.println("Best flight search time: " + 
+            System.out.println("  - Best flight from London to Paris: " + bestFlight);
+            System.out.println("  - Best flight search time: " + 
                               String.format("%.2f", bestFlightTime / 1_000_000.0) + " ms");
         }
         
-        // Show LinkedList characteristics
-        System.out.println("\nLinkedList Implementation Characteristics:");
-        System.out.println("- Sequential access pattern");
-        System.out.println("- O(n) search time for airports");
-        System.out.println("- O(1) insertion at end");
-        System.out.println("- Memory efficient for sparse graphs");
-        System.out.println("- Good for traversal operations");
+        // Show HashMap characteristics
+        System.out.println("\nHashMap Implementation Characteristics:");
+        System.out.println("- O(1) average search time");
+        System.out.println("- Fast random access to any airport");
+        System.out.println("- Efficient for frequent lookups");
+        System.out.println("- Better for dense graphs");
+        System.out.println("- Higher memory overhead due to hash table");
     }
     
     /**

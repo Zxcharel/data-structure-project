@@ -1,7 +1,9 @@
+package common;
+
 /**
  * Edge class represents a flight route between two airports.
  * Each edge stores airline information and calculated weight rating.
- * This version is designed for LinkedList-based graph implementation.
+ * Used by both HashMap and LinkedList implementations.
  */
 public class Edge {
     private String destinationAirport;
