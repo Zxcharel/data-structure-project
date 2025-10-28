@@ -3,6 +3,7 @@ package DoublyLinkedListGraph;
 import java.util.List;
 import common.Edge;
 import common.FlightGraphInterface;
+import common.CSVParser;
 
 // Note: CSVParser is in the root package, so we need to reference it directly
 
@@ -16,17 +17,8 @@ public class DoublyLinkedListGraphDemo {
             String csvFilePath = "cleaned_flights.csv";
             System.out.println("Loading flight data from: " + csvFilePath);
 
-            // Parse CSV using CSVParser to create DoublyLinkedListFlightGraph
-            // Use reflection to access CSVParser from root package
-            FlightGraphInterface graphInterface;
-            try {
-                Class<?> csvParserClass = Class.forName("CSVParser");
-                java.lang.reflect.Method method = csvParserClass.getMethod("parseCSVToDoublyLinkedListGraph", String.class);
-                graphInterface = (FlightGraphInterface) method.invoke(null, csvFilePath);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to parse CSV: " + e.getMessage(), e);
-            }
-            DoublyLinkedListFlightGraph graph = (DoublyLinkedListFlightGraph) graphInterface;
+            // Parse CSV directly into a new DoublyLinkedListFlightGraph (avoid reflection)
+            DoublyLinkedListFlightGraph graph = CSVParser.parseCSVIntoGraph(csvFilePath, new DoublyLinkedListFlightGraph());
 
             // Print basic stats
             graph.printGraphStats();

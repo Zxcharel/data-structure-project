@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.util.List;
 import common.Edge;
 import common.FlightGraphInterface;
+import common.CSVParser;
 
 /**
  * Main program to test the LinkedList-based FlightGraph implementation
@@ -10,11 +11,12 @@ public class LinkedListGraphDemo {
     
     public static void main(String[] args) {
         try {
-            // Load flight data from CSV
-            String csvFilePath = "../src/cleaned_flights.csv"; // Path to your CSV file
+            // Load flight data from CSV (project root)
+            String csvFilePath = "cleaned_flights.csv";
             System.out.println("Loading flight data from: " + csvFilePath);
             
-            LinkedListFlightGraph graph = (LinkedListFlightGraph) CSVParser.parseCSVToLinkedListGraph(csvFilePath);
+            // Parse CSV directly into a new LinkedListFlightGraph
+            LinkedListFlightGraph graph = CSVParser.parseCSVIntoGraph(csvFilePath, new LinkedListFlightGraph());
             
             // Display graph statistics
             graph.printGraphStats();

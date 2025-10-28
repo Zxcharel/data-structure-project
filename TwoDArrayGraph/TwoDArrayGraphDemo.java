@@ -3,6 +3,7 @@ package TwoDArrayGraph;
 import java.util.List;
 import common.Edge;
 import common.FlightGraphInterface;
+import common.CSVParser;
 
 /**
  * Demo program for the TwoDArrayFlightGraph implementation
@@ -14,17 +15,8 @@ public class TwoDArrayGraphDemo {
             String csvFilePath = "cleaned_flights.csv";
             System.out.println("Loading flight data from: " + csvFilePath);
 
-            // Parse CSV using CSVParser to create TwoDArrayFlightGraph
-            // Use reflection to access CSVParser from root package
-            FlightGraphInterface graphInterface;
-            try {
-                Class<?> csvParserClass = Class.forName("CSVParser");
-                java.lang.reflect.Method method = csvParserClass.getMethod("parseCSVToTwoDArrayGraph", String.class);
-                graphInterface = (FlightGraphInterface) method.invoke(null, csvFilePath);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to parse CSV: " + e.getMessage(), e);
-            }
-            TwoDArrayFlightGraph graph = (TwoDArrayFlightGraph) graphInterface;
+            // Parse CSV directly into a new TwoDArrayFlightGraph (avoid reflection)
+            TwoDArrayFlightGraph graph = CSVParser.parseCSVIntoGraph(csvFilePath, new TwoDArrayFlightGraph());
 
             // Print basic stats
             graph.printGraphStats();

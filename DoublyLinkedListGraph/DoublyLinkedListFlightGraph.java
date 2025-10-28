@@ -25,7 +25,7 @@ public class DoublyLinkedListFlightGraph implements FlightGraphInterface {
         EdgeList edgeList;
 
         AirportNode(String code) {
-            this.airportCode = code.toLowerCase();
+            this.airportCode = (code == null) ? null : code.toLowerCase();
             this.edgeList = new EdgeList();
         }
     }

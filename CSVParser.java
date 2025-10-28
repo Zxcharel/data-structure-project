@@ -98,6 +98,17 @@ public class CSVParser {
     }
 
     /**
+     * Parse CSV into a provided FlightGraph implementation instance
+     * @param filePath path to the CSV file
+     * @param graph graph instance to populate
+     * @return the populated graph instance
+     * @throws IOException if file cannot be read
+     */
+    public static <T extends FlightGraphInterface> T parseCSVIntoGraph(String filePath, T graph) throws IOException {
+        return parseCSVToGraph(filePath, graph);
+    }
+    
+    /**
      * Generic method to parse CSV and populate any FlightGraph implementation
      * 
      * @param filePath path to the CSV file
