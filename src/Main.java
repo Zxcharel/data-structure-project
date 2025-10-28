@@ -1,7 +1,9 @@
-import data.CsvReader;
-import graph.Graph;
-import algo.*;
-import experiments.ExperimentRunner;
+package src;
+
+import src.data.CsvReader;
+import src.graph.Graph;
+import src.algo.*;
+import src.experiments.ExperimentRunner;
 import java.io.IOException;
 import java.util.*;
 

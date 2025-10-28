@@ -1,8 +1,8 @@
-package algo;
+package src.algo;
 
-import graph.Edge;
-import graph.Graph;
-import util.Stopwatch;
+import src.graph.Edge;
+import src.graph.Graph;
+import src.util.Stopwatch;
 import java.util.*;
 
 /**

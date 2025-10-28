@@ -1,4 +1,4 @@
-package algo;
+package src.algo;
 
 import java.util.List;
 

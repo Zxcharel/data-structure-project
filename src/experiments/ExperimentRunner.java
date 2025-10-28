@@ -121,7 +121,7 @@ public class ExperimentRunner {
     private Set<String> getAllAirlines() {
         Set<String> airlines = new HashSet<>();
         for (String node : graph.nodes()) {
-            for (graph.Edge edge : graph.neighbors(node)) {
+            for (src.graph.Edge edge : graph.neighbors(node)) {
                 airlines.add(edge.getAirline());
             }
         }

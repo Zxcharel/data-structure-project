@@ -1,7 +1,7 @@
-package algo;
+package src.algo;
 
-import graph.Edge;
-import graph.Graph;
+import src.graph.Edge;
+import src.graph.Graph;
 import java.util.*;
 
 /**
