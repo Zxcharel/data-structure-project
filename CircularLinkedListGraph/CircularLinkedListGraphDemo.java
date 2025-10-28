@@ -15,8 +15,8 @@ public class CircularLinkedListGraphDemo {
             String csvFile = "cleaned_flights.csv";
             System.out.println("Loading data from: " + csvFile);
 
-            CircularLinkedListFlightGraph graph = (CircularLinkedListFlightGraph)
-                    CSVParser.parseCSVToGraph(csvFile);
+            CircularLinkedListFlightGraph graph =
+                common.CSVParser.parseCSVIntoGraph(csvFile, new CircularLinkedListFlightGraph());
 
             graph.printGraphStats();
             demonstrateCircularFeatures(graph);
