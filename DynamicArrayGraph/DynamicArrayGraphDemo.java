@@ -1,4 +1,4 @@
-package LinearArrayGraph;
+package DynamicArrayGraph;
 
 import java.io.IOException;
 import java.util.List;
@@ -6,11 +6,11 @@ import common.Edge;
 import common.FlightGraphInterface;
 
 /**
- * Main program to test the Linear Array-based FlightGraph implementation
+ * Main program to test the Dynamic Array-based FlightGraph implementation
  */
 
-// java -cp . LinearArrayGraph.LinearArrayGraphDemo
-public class LinearArrayGraphDemo {
+//  java -cp . DynamicArrayGraph.DynamicArrayGraphDemo
+public class DynamicArrayGraphDemo {
 
     public static void main(String[] args) {
         try {
@@ -18,16 +18,16 @@ public class LinearArrayGraphDemo {
             String csvFilePath = "cleaned_flights.csv"; // Path to your CSV file
             System.out.println("Loading flight data from: " + csvFilePath);
 
-            // Use LinearArrayCSVLoader to create LinearArrayFlightGraph
-            LinearArrayFlightGraph graph = LinearArrayCSVLoader.loadFromCSV(csvFilePath);
+            // Use DynamicArrayCSVLoader to create DynamicArrayFlightGraph
+            DynamicArrayFlightGraph graph = DynamicArrayCSVLoader.loadFromCSV(csvFilePath);
 
             // Display graph statistics
             graph.printGraphStats();
 
-            // Demonstrate Linear Array-specific features
-            demonstrateLinearArrayFeatures(graph);
+            // Demonstrate Dynamic Array-specific features
+            demonstrateDynamicArrayFeatures(graph);
 
-            // Compare with HashMap implementation
+            // Compare with Linear Array implementation
             compareImplementations(graph);
 
         } catch (IOException e) {
@@ -40,21 +40,23 @@ public class LinearArrayGraphDemo {
     }
 
     /**
-     * Demonstrate Linear Array-specific features
+     * Demonstrate Dynamic Array-specific features
      */
-    private static void demonstrateLinearArrayFeatures(FlightGraphInterface graph) {
-        System.out.println("\n=== Linear Array Implementation Features ===");
+    private static void demonstrateDynamicArrayFeatures(FlightGraphInterface graph) {
+        System.out.println("\n=== Dynamic Array Implementation Features ===");
 
-        LinearArrayFlightGraph linearGraph = (LinearArrayFlightGraph) graph;
+        DynamicArrayFlightGraph dynamicGraph = (DynamicArrayFlightGraph) graph;
 
-        // Show array utilization
-        System.out.println("Array Utilization Statistics:");
-        System.out.println("  - " + linearGraph.getArrayUtilization());
+        // Show dynamic array utilization
+        System.out.println("Dynamic Array Utilization Statistics:");
+        System.out.println("  - " + dynamicGraph.getArrayUtilization());
+        System.out.println("  - " + dynamicGraph.getCapacityInfo());
+        System.out.println("  - " + dynamicGraph.getPerformanceStats());
         System.out.println("  - Estimated memory usage: " +
-                String.format("%.2f", linearGraph.getEstimatedMemoryUsage() / 1024.0) + " KB");
+                String.format("%.2f", dynamicGraph.getEstimatedMemoryUsage() / 1024.0) + " KB");
 
         // Show sequential access performance
-        System.out.println("\nLinear Array Sequential Access Performance:");
+        System.out.println("\nDynamic Array Sequential Access Performance:");
 
         long startTime = System.nanoTime();
         int totalFlights = 0;
@@ -70,13 +72,13 @@ public class LinearArrayGraphDemo {
 
         // Show busiest airport functionality
         System.out.println("\n=== Busiest Airport Analysis ===");
-        String busiestAirport = linearGraph.getBusiestAirport();
+        String busiestAirport = dynamicGraph.getBusiestAirport();
         if (busiestAirport != null) {
             int busiestFlights = graph.getFlightsFrom(busiestAirport).size();
             System.out.println("Busiest Airport: " + busiestAirport + " (" + busiestFlights + " flights)");
 
             // Show top 5 busiest airports
-            List<String> airportsByFlightCount = linearGraph.getAirportsByFlightCount();
+            List<String> airportsByFlightCount = dynamicGraph.getAirportsByFlightCount();
             System.out.println("\nTop 5 Busiest Airports:");
             for (int i = 0; i < Math.min(5, airportsByFlightCount.size()); i++) {
                 String airport = airportsByFlightCount.get(i);
@@ -105,12 +107,12 @@ public class LinearArrayGraphDemo {
     }
 
     /**
-     * Compare Linear Array vs HashMap implementations
+     * Compare Dynamic Array vs Linear Array implementations
      */
     private static void compareImplementations(FlightGraphInterface graph) {
-        System.out.println("\n=== Linear Array vs HashMap Comparison ===");
+        System.out.println("\n=== Dynamic Array vs Linear Array Comparison ===");
 
-        LinearArrayFlightGraph linearGraph = (LinearArrayFlightGraph) graph;
+        DynamicArrayFlightGraph dynamicGraph = (DynamicArrayFlightGraph) graph;
 
         // Test search operations
         long startTime = System.nanoTime();
@@ -122,7 +124,7 @@ public class LinearArrayGraphDemo {
         long endTime = System.nanoTime();
         long searchTime = endTime - startTime;
 
-        System.out.println("Linear Array Search Performance:");
+        System.out.println("Dynamic Array Search Performance:");
         System.out.println("  - Search time for flights from '" + testAirport + "': " +
                 String.format("%.2f", searchTime / 1_000_000.0) + " ms");
         System.out.println("  - Found " + flights.size() + " flights");
@@ -139,20 +141,28 @@ public class LinearArrayGraphDemo {
                     String.format("%.2f", bestFlightTime / 1_000_000.0) + " ms");
         }
 
-        // Show Linear Array characteristics
-        System.out.println("\nLinear Array Implementation Characteristics:");
+        // Show Dynamic Array characteristics
+        System.out.println("\nDynamic Array Implementation Characteristics:");
         System.out.println("- O(1) average search time with HashMap index mapping");
-        System.out.println("- Sequential memory layout for better cache performance");
-        System.out.println("- Dynamic array expansion when capacity is reached");
-        System.out.println("- Lower memory overhead compared to HashMap");
-        System.out.println("- Efficient for both random access and sequential traversal");
+        System.out.println("- Smart capacity management with automatic expansion");
+        System.out.println("- Memory-efficient compaction when utilization is low");
+        System.out.println("- Performance monitoring and analytics");
+        System.out.println("- Smaller initial capacity for better memory usage");
         System.out.println("- Built-in sorting capabilities for airport analysis");
 
         // Memory comparison
         System.out.println("\nMemory Usage Analysis:");
-        System.out.println("  - " + linearGraph.getArrayUtilization());
+        System.out.println("  - " + dynamicGraph.getArrayUtilization());
+        System.out.println("  - " + dynamicGraph.getCapacityInfo());
+        System.out.println("  - " + dynamicGraph.getPerformanceStats());
         System.out.println("  - Estimated memory: " +
-                String.format("%.2f", linearGraph.getEstimatedMemoryUsage() / 1024.0) + " KB");
+                String.format("%.2f", dynamicGraph.getEstimatedMemoryUsage() / 1024.0) + " KB");
+
+        // Demonstrate compaction
+        System.out.println("\n=== Dynamic Array Compaction Demo ===");
+        System.out.println("Forcing compaction to demonstrate dynamic behavior...");
+        dynamicGraph.forceCompaction();
+        System.out.println("After compaction: " + dynamicGraph.getArrayUtilization());
     }
 
     /**
@@ -184,13 +194,14 @@ public class LinearArrayGraphDemo {
             System.out.println("Airlines operating from " + sampleAirport + ": " + airlines);
         }
 
-        // Demonstrate Linear Array specific operations
-        LinearArrayFlightGraph linearGraph = (LinearArrayFlightGraph) graph;
-        System.out.println("\nLinear Array Specific Operations:");
-        System.out.println("  - " + linearGraph.getArrayUtilization());
+        // Demonstrate Dynamic Array specific operations
+        DynamicArrayFlightGraph dynamicGraph = (DynamicArrayFlightGraph) graph;
+        System.out.println("\nDynamic Array Specific Operations:");
+        System.out.println("  - " + dynamicGraph.getArrayUtilization());
+        System.out.println("  - " + dynamicGraph.getPerformanceStats());
 
         // Show airport sorting capability
-        List<String> sortedAirports = linearGraph.getAirportsByFlightCount();
+        List<String> sortedAirports = dynamicGraph.getAirportsByFlightCount();
         System.out.println("  - Airports sorted by flight count: " +
                 sortedAirports.subList(0, Math.min(3, sortedAirports.size())));
     }
