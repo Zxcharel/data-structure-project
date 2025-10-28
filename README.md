@@ -25,7 +25,7 @@ The system converts airline ratings (1-5 scale) to edge weights using the formul
 javac -d out $(find src -name "*.java")
 
 # Run the application
-java -cp out Main
+java -cp out src.Main
 ```
 
 ## Usage

@@ -4,6 +4,13 @@ import src.data.CsvReader;
 import src.graph.Graph;
 import src.algo.*;
 import src.experiments.ExperimentRunner;
+import src.analysis.GraphAnalyzer;
+import src.analysis.CentralityMetrics;
+import src.comparison.DataStructureComparator;
+import src.comparison.DataStructureComparator.GraphComparisonResult;
+import src.comparison.DataStructureComparator.MemoryComparisonResult;
+import src.comparison.DataStructureComparator.AlgorithmComparisonResult;
+import src.reports.AnalysisReportGenerator;
 import java.io.IOException;
 import java.util.*;
 
@@ -35,6 +42,15 @@ public class Main {
                     runExperiments();
                     break;
                 case 4:
+                    performGraphAnalysis();
+                    break;
+                case 5:
+                    performDataStructureComparison();
+                    break;
+                case 6:
+                    generateAnalysisReport();
+                    break;
+                case 7:
                     System.out.println("Goodbye!");
                     return;
                 default:
@@ -53,7 +69,10 @@ public class Main {
         System.out.println("1. Build graph from CSV");
         System.out.println("2. Query best route");
         System.out.println("3. Run experiments");
-        System.out.println("4. Exit");
+        System.out.println("4. Graph analysis");
+        System.out.println("5. Data structure comparison");
+        System.out.println("6. Generate analysis report");
+        System.out.println("7. Exit");
         System.out.println();
     }
     
@@ -302,5 +321,143 @@ public class Main {
     private static String getStringInput(String prompt) {
         System.out.print(prompt);
         return scanner.nextLine();
+    }
+    
+    /**
+     * Menu option 4: Perform graph analysis
+     */
+    private static void performGraphAnalysis() {
+        if (graph == null) {
+            System.out.println("Error: No graph loaded. Please build graph from CSV first.");
+            return;
+        }
+        
+        System.out.println("=== Graph Analysis ===");
+        
+        GraphAnalyzer analyzer = new GraphAnalyzer(graph);
+        AnalysisReportGenerator reportGenerator = new AnalysisReportGenerator();
+        
+        // Show quick summary
+        reportGenerator.printQuickSummary(analyzer);
+        
+        // Detailed analysis
+        System.out.println("Performing detailed analysis...");
+        
+        // Structure analysis
+        System.out.println("\n--- Graph Structure ---");
+        System.out.println(analyzer.analyzeStructure().toString());
+        
+        // Airline analysis
+        System.out.println("\n--- Airline Analysis ---");
+        System.out.println(analyzer.analyzeAirlines().toString());
+        
+        // Route analysis
+        System.out.println("\n--- Route Analysis ---");
+        System.out.println(analyzer.analyzeRoutes().toString());
+        
+        // Centrality analysis
+        System.out.println("\n--- Centrality Analysis ---");
+        Map<String, CentralityMetrics> centrality = analyzer.calculateCentrality();
+        
+        // Show top 5 countries by degree centrality
+        List<Map.Entry<String, CentralityMetrics>> sortedByDegree = new ArrayList<>(centrality.entrySet());
+        sortedByDegree.sort((a, b) -> Integer.compare(b.getValue().getDegree(), a.getValue().getDegree()));
+        
+        System.out.println("Top 5 countries by degree centrality:");
+        for (int i = 0; i < Math.min(5, sortedByDegree.size()); i++) {
+            Map.Entry<String, CentralityMetrics> entry = sortedByDegree.get(i);
+            System.out.printf("%d. %s: %s%n", i + 1, entry.getKey(), entry.getValue().toString());
+        }
+    }
+    
+    /**
+     * Menu option 5: Perform data structure comparison
+     */
+    private static void performDataStructureComparison() {
+        if (graph == null) {
+            System.out.println("Error: No graph loaded. Please build graph from CSV first.");
+            return;
+        }
+        
+        System.out.println("=== Data Structure Comparison ===");
+        
+        DataStructureComparator comparator = new DataStructureComparator();
+        
+        // Get sample nodes for testing
+        List<String> sampleNodes = graph.nodes().subList(0, Math.min(50, graph.nodes().size()));
+        int testEdges = Math.min(200, graph.edgeCount());
+        
+        System.out.println("Testing with " + sampleNodes.size() + " nodes and " + testEdges + " edges...");
+        
+        // Graph implementation comparison
+        System.out.println("\n--- Graph Implementation Comparison ---");
+        GraphComparisonResult graphComparison = comparator.compareGraphImplementations(sampleNodes, testEdges);
+        System.out.println(graphComparison.toString());
+        
+        // Memory comparison
+        System.out.println("\n--- Memory Usage Comparison ---");
+        MemoryComparisonResult memoryComparison = comparator.compareMemoryUsage(sampleNodes, testEdges);
+        System.out.println(memoryComparison.toString());
+        
+        // Algorithm comparison
+        System.out.println("\n--- Algorithm Performance Comparison ---");
+        List<String> testQueries = generateTestQueries(sampleNodes, 10);
+        AlgorithmComparisonResult algorithmComparison = comparator.compareAlgorithms(graph, testQueries);
+        System.out.println(algorithmComparison.toString());
+    }
+    
+    /**
+     * Menu option 6: Generate comprehensive analysis report
+     */
+    private static void generateAnalysisReport() {
+        if (graph == null) {
+            System.out.println("Error: No graph loaded. Please build graph from CSV first.");
+            return;
+        }
+        
+        System.out.println("=== Generate Analysis Report ===");
+        
+        String outputDir = getStringInput("Enter output directory (press Enter for 'out/analysis'): ");
+        if (outputDir.trim().isEmpty()) {
+            outputDir = "out/analysis";
+        }
+        
+        try {
+            GraphAnalyzer analyzer = new GraphAnalyzer(graph);
+            DataStructureComparator comparator = new DataStructureComparator();
+            AnalysisReportGenerator reportGenerator = new AnalysisReportGenerator();
+            
+            System.out.println("Generating comprehensive analysis report...");
+            reportGenerator.generateCompleteReport(analyzer, comparator, outputDir);
+            
+            System.out.println("Analysis report generated successfully!");
+            System.out.println("Files created:");
+            System.out.println("- " + outputDir + "/analysis_report.md");
+            System.out.println("- " + outputDir + "/centrality_data.csv");
+            System.out.println("- " + outputDir + "/airline_data.csv");
+            System.out.println("- " + outputDir + "/route_data.csv");
+            
+        } catch (IOException e) {
+            System.err.println("Error generating report: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Generates test queries for algorithm comparison
+     */
+    private static List<String> generateTestQueries(List<String> nodes, int numQueries) {
+        List<String> queries = new ArrayList<>();
+        Random random = new Random(42);
+        
+        for (int i = 0; i < numQueries; i++) {
+            String origin = nodes.get(random.nextInt(nodes.size()));
+            String destination = nodes.get(random.nextInt(nodes.size()));
+            
+            if (!origin.equals(destination)) {
+                queries.add(origin + " -> " + destination);
+            }
+        }
+        
+        return queries;
     }
 }
