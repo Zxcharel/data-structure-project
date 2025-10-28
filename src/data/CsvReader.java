@@ -1,8 +1,8 @@
-package data;
+package src.data;
 
-import graph.AdjacencyListGraph;
-import graph.Edge;
-import graph.Graph;
+import src.graph.AdjacencyListGraph;
+import src.graph.Edge;
+import src.graph.Graph;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;

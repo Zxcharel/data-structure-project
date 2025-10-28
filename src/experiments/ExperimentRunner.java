@@ -1,8 +1,8 @@
-package experiments;
+package src.experiments;
 
-import algo.*;
-import graph.Graph;
-import util.IOUtils;
+import src.algo.*;
+import src.graph.Graph;
+import src.util.IOUtils;
 import java.io.IOException;
 import java.util.*;
 

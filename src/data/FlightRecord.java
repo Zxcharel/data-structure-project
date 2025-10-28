@@ -1,4 +1,4 @@
-package data;
+package src.data;
 
 /**
  * Represents a single flight record from the CSV file.

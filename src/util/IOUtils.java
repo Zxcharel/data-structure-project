@@ -1,4 +1,4 @@
-package util;
+package src.util;
 
 import java.io.FileWriter;
 import java.io.IOException;

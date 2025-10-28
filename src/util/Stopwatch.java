@@ -1,4 +1,4 @@
-package util;
+package src.util;
 
 /**
  * Simple stopwatch utility for measuring execution time.

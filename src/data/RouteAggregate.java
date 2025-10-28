@@ -1,4 +1,4 @@
-package data;
+package src.data;
 
 /**
  * Aggregates multiple flight records for the same route (origin, destination, airline).

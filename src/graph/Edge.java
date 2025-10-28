@@ -1,4 +1,4 @@
-package graph;
+package src.graph;
 
 /**
  * Represents an edge in the flight route graph.
