@@ -55,6 +55,23 @@ public class CSVParser {
     }
     
     /**
+     * Parse CSV file and populate the TwoDArray-based flight graph
+     * @param filePath path to the CSV file
+     * @return populated TwoDArrayGraph.TwoDArrayFlightGraph object
+     * @throws IOException if file cannot be read
+     */
+    public static FlightGraphInterface parseCSVToTwoDArrayGraph(String filePath) throws IOException {
+        // Create TwoDArray-based graph using reflection to avoid import issues
+        try {
+            Class<?> twoDArrayGraphClass = Class.forName("TwoDArrayGraph.TwoDArrayFlightGraph");
+            FlightGraphInterface graph = (FlightGraphInterface) twoDArrayGraphClass.getDeclaredConstructor().newInstance();
+            return parseCSVToGraph(filePath, graph);
+        } catch (Exception e) {
+            throw new IOException("Failed to create TwoDArray-based FlightGraph: " + e.getMessage());
+        }
+    }
+    
+    /**
      * Generic method to parse CSV and populate any FlightGraph implementation
      * @param filePath path to the CSV file
      * @param graph the graph instance to populate
