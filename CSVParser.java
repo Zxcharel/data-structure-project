@@ -38,6 +38,23 @@ public class CSVParser {
     }
     
     /**
+     * Parse CSV file and populate the DoublyLinkedList-based flight graph
+     * @param filePath path to the CSV file
+     * @return populated DoublyLinkedListGraph.DoublyLinkedListFlightGraph object
+     * @throws IOException if file cannot be read
+     */
+    public static FlightGraphInterface parseCSVToDoublyLinkedListGraph(String filePath) throws IOException {
+        // Create DoublyLinkedList-based graph using reflection to avoid import issues
+        try {
+            Class<?> doublyLinkedListGraphClass = Class.forName("DoublyLinkedListGraph.DoublyLinkedListFlightGraph");
+            FlightGraphInterface graph = (FlightGraphInterface) doublyLinkedListGraphClass.getDeclaredConstructor().newInstance();
+            return parseCSVToGraph(filePath, graph);
+        } catch (Exception e) {
+            throw new IOException("Failed to create DoublyLinkedList-based FlightGraph: " + e.getMessage());
+        }
+    }
+    
+    /**
      * Generic method to parse CSV and populate any FlightGraph implementation
      * @param filePath path to the CSV file
      * @param graph the graph instance to populate
