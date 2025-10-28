@@ -1,0 +1,151 @@
+query_id,origin,destination,algorithm,heuristic,maxStops,edges_relaxed,nodes_visited,runtime_ms,path_len,total_weight
+1,davao,m√°laga,Dijkstra,none,unlimited,2336,652,3,0,0.000
+1,davao,m√°laga,A*,zero,unlimited,2336,652,3,0,0.000
+1,davao,m√°laga,A*,hop,unlimited,2336,652,102,0,0.000
+2,bos,gua,Dijkstra,none,unlimited,1539,203,0,5,6.200
+2,bos,gua,A*,zero,unlimited,1539,203,1,5,6.200
+2,bos,gua,A*,hop,unlimited,295,16,6,5,6.200
+3,cleveland ohio,lga,Dijkstra,none,2,1,2,0,0,0.000
+3,cleveland ohio,lga,A*,zero,2,1,2,0,0,0.000
+3,cleveland ohio,lga,A*,hop,2,1,2,0,0,0.000
+4,managua,mbj,Dijkstra,none,unlimited,0,1,1,0,0.000
+4,managua,mbj,A*,zero,unlimited,0,1,0,0,0.000
+4,managua,mbj,A*,hop,unlimited,0,1,0,0,0.000
+5,dme,dfw,Dijkstra,none,unlimited,1550,208,1,7,9.867
+5,dme,dfw,A*,zero,unlimited,1550,208,0,7,9.867
+5,dme,dfw,A*,hop,unlimited,283,22,6,7,9.867
+6,santiago,cairns,Dijkstra,none,unlimited,1340,158,0,4,10.300
+6,santiago,cairns,A*,zero,unlimited,1340,158,1,4,10.300
+6,santiago,cairns,A*,hop,unlimited,318,19,6,4,10.300
+7,salzburg,keflavik,Dijkstra,none,unlimited,1958,363,1,7,9.200
+7,salzburg,keflavik,A*,zero,unlimited,1958,363,1,7,9.200
+7,salzburg,keflavik,A*,hop,unlimited,826,51,15,7,9.200
+8,las,"ohio|eze""",Dijkstra,none,2,538,56,0,0,0.000
+8,las,"ohio|eze""",A*,zero,2,538,56,1,0,0.000
+8,las,"ohio|eze""",A*,hop,2,538,56,6,0,0.000
+9,zakynthos,ankara,Dijkstra,none,1,0,1,0,0,0.000
+9,zakynthos,ankara,A*,zero,1,0,1,0,0,0.000
+9,zakynthos,ankara,A*,hop,1,0,1,0,0,0.000
+10,pittsburgh,dammam,Dijkstra,none,unlimited,2023,386,0,5,16.689
+10,pittsburgh,dammam,A*,zero,unlimited,2023,386,1,5,16.689
+10,pittsburgh,dammam,A*,hop,unlimited,713,45,17,5,16.689
+11,hodaidah,huntsville,Dijkstra,none,unlimited,0,1,0,0,0.000
+11,hodaidah,huntsville,A*,zero,unlimited,0,1,0,0,0.000
+11,hodaidah,huntsville,A*,hop,unlimited,0,1,0,0,0.000
+12,ord,dmm,Dijkstra,none,unlimited,1008,138,1,3,4.700
+12,ord,dmm,A*,zero,unlimited,1008,138,1,3,4.700
+12,ord,dmm,A*,hop,unlimited,145,8,3,3,4.700
+13,hnl,dallas-fort worth,Dijkstra,none,unlimited,2276,607,1,6,17.267
+13,hnl,dallas-fort worth,A*,zero,unlimited,2276,607,1,6,17.267
+13,hnl,dallas-fort worth,A*,hop,unlimited,2018,266,34,6,17.267
+14,air canada,kuala lumpur,Dijkstra,none,unlimited,0,1,0,0,0.000
+14,air canada,kuala lumpur,A*,zero,unlimited,0,1,1,0,0.000
+14,air canada,kuala lumpur,A*,hop,unlimited,0,1,0,0,0.000
+15,tijuana,"yhz""",Dijkstra,none,unlimited,2335,651,1,0,0.000
+15,tijuana,"yhz""",A*,zero,unlimited,2335,651,1,0,0.000
+15,tijuana,"yhz""",A*,hop,unlimited,2335,651,42,0,0.000
+16,raleigh-durham,g√∂teborg,Dijkstra,none,5,1931,333,1,5,12.300
+16,raleigh-durham,g√∂teborg,A*,zero,5,1931,333,1,5,12.300
+16,raleigh-durham,g√∂teborg,A*,hop,5,819,57,10,5,12.300
+17,clark,bre,Dijkstra,none,1,41,3,1,0,0.000
+17,clark,bre,A*,zero,1,41,3,0,0,0.000
+17,clark,bre,A*,hop,1,41,3,0,0,0.000
+18,skyros,bcn,Dijkstra,none,unlimited,0,1,0,0,0.000
+18,skyros,bcn,A*,zero,unlimited,0,1,0,0,0.000
+18,skyros,bcn,A*,hop,unlimited,0,1,0,0,0.000
+19,ogg,cgk,Dijkstra,none,unlimited,1,1,0,0,0.000
+19,ogg,cgk,A*,zero,unlimited,1,1,0,0,0.000
+19,ogg,cgk,A*,hop,unlimited,1,1,0,0,0.000
+20,oka,sc|new york,Dijkstra,none,unlimited,2336,652,0,0,0.000
+20,oka,sc|new york,A*,zero,unlimited,2336,652,1,0,0.000
+20,oka,sc|new york,A*,hop,unlimited,2336,652,42,0,0.000
+21,edmonton,"tn""",Dijkstra,none,unlimited,0,1,0,0,0.000
+21,edmonton,"tn""",A*,zero,unlimited,0,1,0,0,0.000
+21,edmonton,"tn""",A*,hop,unlimited,0,1,0,0,0.000
+22,phuket,fl|chicago,Dijkstra,none,unlimited,2335,651,1,0,0.000
+22,phuket,fl|chicago,A*,zero,unlimited,2335,651,1,0,0.000
+22,phuket,fl|chicago,A*,hop,unlimited,2335,651,38,0,0.000
+23,tampa florida,vno,Dijkstra,none,unlimited,0,1,0,0,0.000
+23,tampa florida,vno,A*,zero,unlimited,0,1,0,0,0.000
+23,tampa florida,vno,A*,hop,unlimited,0,1,0,0,0.000
+24,"wi|los angeles & san francisco""",bandung,Dijkstra,none,unlimited,1,2,0,0,0.000
+24,"wi|los angeles & san francisco""",bandung,A*,zero,unlimited,1,2,0,0,0.000
+24,"wi|los angeles & san francisco""",bandung,A*,hop,unlimited,1,2,1,0,0.000
+25,sna,muc,Dijkstra,none,4,613,72,0,0,0.000
+25,sna,muc,A*,zero,4,613,72,0,0,0.000
+25,sna,muc,A*,hop,4,613,72,1,0,0.000
+26,bandung,san paulo (gru),Dijkstra,none,unlimited,2336,652,1,0,0.000
+26,bandung,san paulo (gru),A*,zero,unlimited,2336,652,1,0,0.000
+26,bandung,san paulo (gru),A*,hop,unlimited,2336,652,39,0,0.000
+27,to lanzarote (tom7414) and (tom7415) from ema,newark return,Dijkstra,none,3,1,2,0,0,0.000
+27,to lanzarote (tom7414) and (tom7415) from ema,newark return,A*,zero,3,1,2,0,0,0.000
+27,to lanzarote (tom7414) and (tom7415) from ema,newark return,A*,hop,3,1,2,1,0,0.000
+28,tallinn,pwm,Dijkstra,none,unlimited,1,1,0,0,0.000
+28,tallinn,pwm,A*,zero,unlimited,1,1,0,0,0.000
+28,tallinn,pwm,A*,hop,unlimited,1,1,0,0,0.000
+29,crk,nassau,Dijkstra,none,unlimited,2060,413,0,3,8.500
+29,crk,nassau,A*,zero,unlimited,2060,413,0,3,8.500
+29,crk,nassau,A*,hop,unlimited,754,68,14,3,8.500
+30,bsl,trenton,Dijkstra,none,unlimited,2196,524,0,10,24.489
+30,bsl,trenton,A*,zero,unlimited,2196,524,1,10,24.489
+30,bsl,trenton,A*,hop,unlimited,1485,142,19,10,24.489
+31,kupang,tenerife,Dijkstra,none,unlimited,2048,410,1,6,11.700
+31,kupang,tenerife,A*,zero,unlimited,2048,410,0,6,11.700
+31,kupang,tenerife,A*,hop,unlimited,875,61,14,6,11.700
+32,xi'an,gatwick south,Dijkstra,none,unlimited,2335,651,1,0,0.000
+32,xi'an,gatwick south,A*,zero,unlimited,2335,651,0,0,0.000
+32,xi'an,gatwick south,A*,hop,unlimited,2335,651,38,0,0.000
+33,new york jfk,vilnius,Dijkstra,none,unlimited,2060,418,1,6,10.378
+33,new york jfk,vilnius,A*,zero,unlimited,2060,418,0,6,10.378
+33,new york jfk,vilnius,A*,hop,unlimited,1124,89,9,6,10.378
+34,beijing,ordos,Dijkstra,none,unlimited,2335,651,0,0,0.000
+34,beijing,ordos,A*,zero,unlimited,2335,651,0,0,0.000
+34,beijing,ordos,A*,hop,unlimited,2335,651,38,0,0.000
+35,kin,baltimore washing,Dijkstra,none,2,489,44,0,0,0.000
+35,kin,baltimore washing,A*,zero,2,489,44,0,0,0.000
+35,kin,baltimore washing,A*,hop,2,489,44,4,0,0.000
+36,krakow,MAD,Dijkstra,none,unlimited,2336,652,0,0,0.000
+36,krakow,MAD,A*,zero,unlimited,2336,652,0,0,0.000
+36,krakow,MAD,A*,hop,unlimited,2336,652,38,0,0.000
+37,newark nj,mauritius,Dijkstra,none,2,1,2,0,0,0.000
+37,newark nj,mauritius,A*,zero,2,1,2,0,0,0.000
+37,newark nj,mauritius,A*,hop,2,1,2,1,0,0.000
+38,cfb,bozemon,Dijkstra,none,unlimited,0,1,0,0,0.000
+38,cfb,bozemon,A*,zero,unlimited,0,1,0,0,0.000
+38,cfb,bozemon,A*,hop,unlimited,0,1,0,0,0.000
+39,mke,yichan,Dijkstra,none,unlimited,2086,428,0,6,18.122
+39,mke,yichan,A*,zero,unlimited,2086,428,0,6,18.122
+39,mke,yichan,A*,hop,unlimited,1238,114,13,6,18.122
+40,bozemon,marseilles,Dijkstra,none,unlimited,0,1,0,0,0.000
+40,bozemon,marseilles,A*,zero,unlimited,0,1,1,0,0.000
+40,bozemon,marseilles,A*,hop,unlimited,0,1,0,0,0.000
+41,brive,ninoy aquino international,Dijkstra,none,3,249,20,0,0,0.000
+41,brive,ninoy aquino international,A*,zero,3,249,20,0,0,0.000
+41,brive,ninoy aquino international,A*,hop,3,249,20,2,0,0.000
+42,yqy,nbo,Dijkstra,none,unlimited,0,1,0,0,0.000
+42,yqy,nbo,A*,zero,unlimited,0,1,0,0,0.000
+42,yqy,nbo,A*,hop,unlimited,0,1,0,0,0.000
+43,hau,oka,Dijkstra,none,unlimited,2336,652,0,0,0.000
+43,hau,oka,A*,zero,unlimited,2336,652,1,0,0.000
+43,hau,oka,A*,hop,unlimited,2336,652,39,0,0.000
+44,port elizabeth,brs,Dijkstra,none,unlimited,0,1,0,0,0.000
+44,port elizabeth,brs,A*,zero,unlimited,0,1,0,0,0.000
+44,port elizabeth,brs,A*,hop,unlimited,0,1,1,0,0.000
+45,jersey,glasgow,Dijkstra,none,5,0,1,0,0,0.000
+45,jersey,glasgow,A*,zero,5,0,1,0,0,0.000
+45,jersey,glasgow,A*,hop,5,0,1,0,0,0.000
+46,strasbourg,"wa""",Dijkstra,none,unlimited,2335,651,0,0,0.000
+46,strasbourg,"wa""",A*,zero,unlimited,2335,651,1,0,0.000
+46,strasbourg,"wa""",A*,hop,unlimited,2335,651,38,0,0.000
+47,YAM,st thomas,Dijkstra,none,unlimited,0,1,0,0,0.000
+47,YAM,st thomas,A*,zero,unlimited,0,1,0,0,0.000
+47,YAM,st thomas,A*,hop,unlimited,0,1,0,0,0.000
+48,pnq,long beach,Dijkstra,none,unlimited,0,1,0,0,0.000
+48,pnq,long beach,A*,zero,unlimited,0,1,0,0,0.000
+48,pnq,long beach,A*,hop,unlimited,0,1,0,0,0.000
+49,"nv""",pa|fort lauderdale,Dijkstra,none,unlimited,0,1,0,0,0.000
+49,"nv""",pa|fort lauderdale,A*,zero,unlimited,0,1,0,0,0.000
+49,"nv""",pa|fort lauderdale,A*,hop,unlimited,0,1,0,0,0.000
+50,florida|san juan,budapest,Dijkstra,none,5,1,2,0,0,0.000
+50,florida|san juan,budapest,A*,zero,5,1,2,0,0,0.000
+50,florida|san juan,budapest,A*,hop,5,1,2,0,0,0.000
