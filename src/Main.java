@@ -5,6 +5,9 @@ import src.graph.Graph;
 import src.graph.AdjacencyListGraph;
 import src.graph.DoublyLinkedListGraph;
 import src.graph.CircularLinkedListGraph;
+import src.graph.HalfEdgeGraph;
+import src.graph.LinkCutTreeGraph;
+import src.graph.EulerTourTreeGraph;
 import src.algo.*;
 import src.experiments.ExperimentRunner;
 import src.analysis.GraphAnalyzer;
@@ -97,8 +100,11 @@ public class Main {
             System.out.println("1. AdjacencyListGraph (default)");
             System.out.println("2. DoublyLinkedListGraph");
             System.out.println("3. CircularLinkedListGraph");
-            int implChoice = getIntInput("Enter choice (1-3): ");
-            if (implChoice < 1 || implChoice > 3) implChoice = 1;
+            System.out.println("4. HalfEdgeGraph");
+            System.out.println("5. LinkCutTreeGraph (adapter)");
+            System.out.println("6. EulerTourTreeGraph (adapter)");
+            int implChoice = getIntInput("Enter choice (1-6): ");
+            if (implChoice < 1 || implChoice > 6) implChoice = 1;
 
             switch (implChoice) {
                 case 2:
@@ -106,6 +112,15 @@ public class Main {
                     break;
                 case 3:
                     graph = reader.readCsvAndBuildGraph(csvPath, CircularLinkedListGraph::new);
+                    break;
+                case 4:
+                    graph = reader.readCsvAndBuildGraph(csvPath, HalfEdgeGraph::new);
+                    break;
+                case 5:
+                    graph = reader.readCsvAndBuildGraph(csvPath, LinkCutTreeGraph::new);
+                    break;
+                case 6:
+                    graph = reader.readCsvAndBuildGraph(csvPath, EulerTourTreeGraph::new);
                     break;
                 case 1:
                 default:
