@@ -201,6 +201,12 @@ public class AnalysisReportGenerator {
         }
         
         // Memory recommendations
+        long linearArrayMemory = memoryComparison.getLinearArrayMemory();
+        long dynamicArrayMemory = memoryComparison.getDynamicArrayMemory();
+        long offsetArrayMemory = memoryComparison.getOffsetArrayMemory();
+        long adjListMemory = memoryComparison.getAdjListMemory();
+        long matrixMemory = memoryComparison.getMatrixMemory();
+
         if (memoryComparison.getMemoryRatio() < 0.5) {
             recommendations.append("- **Memory Efficiency**: AdjacencyList uses ")
                           .append(IOUtils.formatDouble(memoryComparison.getMemoryRatio(), 2))
@@ -209,6 +215,39 @@ public class AnalysisReportGenerator {
             recommendations.append("- **Memory Trade-off**: MatrixGraph uses ")
                           .append(IOUtils.formatDouble(1.0 / memoryComparison.getMemoryRatio(), 2))
                           .append("x less memory than AdjacencyList. Consider MatrixGraph for dense graphs.\n");
+        }
+
+        // LinearArray memory comparison
+        if (linearArrayMemory < adjListMemory && linearArrayMemory < matrixMemory) {
+            recommendations.append("- **LinearArray Efficiency**: LinearArray uses the least memory (")
+                          .append(linearArrayMemory).append(" bytes) compared to AdjacencyList (")
+                          .append(adjListMemory).append(" bytes) and MatrixGraph (")
+                          .append(matrixMemory).append(" bytes). Consider LinearArray for memory-constrained environments.\n");
+        } else if (memoryComparison.getLinearArrayMemoryRatio() < 0.7) {
+            recommendations.append("- **LinearArray Trade-off**: LinearArray uses ")
+                          .append(IOUtils.formatDouble(memoryComparison.getLinearArrayMemoryRatio(), 2))
+                          .append("x less memory than MatrixGraph, offering a balance between AdjacencyList and Matrix approaches.\n");
+        }
+
+        // DynamicArray memory comparison
+        if (dynamicArrayMemory < adjListMemory && dynamicArrayMemory < matrixMemory && dynamicArrayMemory < linearArrayMemory) {
+            recommendations.append("- **DynamicArray Efficiency**: DynamicArray uses the least memory (")
+                          .append(dynamicArrayMemory).append(" bytes) among all implementations. Consider DynamicArray for optimal memory usage.\n");
+        } else if (memoryComparison.getDynamicArrayMemoryRatio() < 0.8) {
+            recommendations.append("- **DynamicArray Trade-off**: DynamicArray uses ")
+                          .append(IOUtils.formatDouble(memoryComparison.getDynamicArrayMemoryRatio(), 2))
+                          .append("x less memory than MatrixGraph, with automatic capacity management for better memory efficiency.\n");
+        }
+
+        // OffsetArray memory comparison (CSR-style - optimized for pathfinding)
+        if (offsetArrayMemory < adjListMemory && offsetArrayMemory < matrixMemory) {
+            recommendations.append("- **OffsetArray (CSR) Optimization**: OffsetArray uses ")
+                          .append(offsetArrayMemory).append(" bytes and provides excellent cache performance for pathfinding algorithms. ")
+                          .append("The single contiguous edge array ensures optimal memory locality during graph traversal.\n");
+        } else if (memoryComparison.getOffsetArrayMemoryRatio() < 0.8) {
+            recommendations.append("- **OffsetArray (CSR) Trade-off**: OffsetArray uses ")
+                          .append(IOUtils.formatDouble(memoryComparison.getOffsetArrayMemoryRatio(), 2))
+                          .append("x less memory than MatrixGraph. This CSR-style structure is optimized for sequential access patterns in pathfinding.\n");
         }
         
         // Algorithm recommendations
