@@ -2,6 +2,12 @@ package src;
 
 import src.data.CsvReader;
 import src.graph.Graph;
+import src.graph.AdjacencyListGraph;
+import src.graph.MatrixGraph;
+import src.graph.LinearArrayGraph;
+import src.graph.DynamicArrayGraph;
+import src.graph.OffsetArrayGraph;
+import src.graph.RoutePartitionedTrieGraph;
 import src.algo.*;
 import src.experiments.ExperimentRunner;
 import src.analysis.GraphAnalyzer;
@@ -87,12 +93,71 @@ public class Main {
             csvPath = "data/cleaned_flights.csv";
         }
 
+        // Choose graph implementation
+        System.out.println("Choose graph implementation:");
+        System.out.println("1. AdjacencyListGraph (default)");
+        System.out.println("2. MatrixGraph");
+        System.out.println("3. LinearArrayGraph");
+        System.out.println("4. DynamicArrayGraph");
+        System.out.println("5. OffsetArrayGraph (CSR)");
+        System.out.println("6. RoutePartitionedTrieGraph");
+        int implChoice = getIntInput("Enter graph type (1-6): ");
+        if (implChoice < 1 || implChoice > 6) {
+            implChoice = 1;
+        }
+
         try {
             System.out.println("Reading CSV file: " + csvPath);
             CsvReader reader = new CsvReader();
-            graph = reader.readCsvAndBuildGraph(csvPath);
+
+            switch (implChoice) {
+                case 1: { // AdjacencyListGraph
+                    Graph g = new AdjacencyListGraph();
+                    graph = reader.readCsvAndBuildGraph(csvPath, g);
+                    break;
+                }
+                case 2: { // MatrixGraph requires capacity; build temp then copy
+                    Graph temp = reader.readCsvAndBuildGraph(csvPath); // build adjacency first
+                    int capacity = Math.max(temp.nodeCount() * 2, 16);
+                    MatrixGraph mg = new MatrixGraph(capacity);
+                    // copy nodes and edges
+                    for (String node : temp.nodes()) {
+                        mg.addNode(node);
+                    }
+                    for (String node : temp.nodes()) {
+                        for (src.graph.Edge e : temp.neighbors(node)) {
+                            mg.addEdge(node, e);
+                        }
+                    }
+                    graph = mg;
+                    break;
+                }
+                case 3: { // LinearArrayGraph
+                    Graph g = new LinearArrayGraph();
+                    graph = reader.readCsvAndBuildGraph(csvPath, g);
+                    break;
+                }
+                case 4: { // DynamicArrayGraph
+                    Graph g = new DynamicArrayGraph();
+                    graph = reader.readCsvAndBuildGraph(csvPath, g);
+                    break;
+                }
+                case 5: { // OffsetArrayGraph
+                    OffsetArrayGraph g = new OffsetArrayGraph();
+                    reader.readCsvAndBuildGraph(csvPath, g);
+                    g.finalizeCSR();
+                    graph = g;
+                    break;
+                }
+                case 6: { // RoutePartitionedTrieGraph
+                    Graph g = new RoutePartitionedTrieGraph();
+                    graph = reader.readCsvAndBuildGraph(csvPath, g);
+                    break;
+                }
+            }
 
             System.out.println("Graph built successfully!");
+            System.out.println("Implementation: " + graph.getClass().getSimpleName());
             System.out.println("Nodes: " + graph.nodeCount());
             System.out.println("Edges: " + graph.edgeCount());
 

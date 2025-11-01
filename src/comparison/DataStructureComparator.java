@@ -6,6 +6,7 @@ import src.graph.MatrixGraph;
 import src.graph.LinearArrayGraph;
 import src.graph.DynamicArrayGraph;
 import src.graph.OffsetArrayGraph;
+import src.graph.RoutePartitionedTrieGraph;
 import src.algo.Dijkstra;
 import src.algo.AStar;
 import src.algo.PathResult;
@@ -62,19 +63,27 @@ public class DataStructureComparator {
         offsetArrayGraph.finalizeCSR(); // Optimize for performance testing
         offsetArrayBuildTime.stop();
 
+        // Test RoutePartitionedTrieGraph
+        RoutePartitionedTrieGraph routeTrieGraph = new RoutePartitionedTrieGraph();
+        Stopwatch routeTrieBuildTime = new Stopwatch();
+        routeTrieBuildTime.start();
+        buildGraph(routeTrieGraph, testEdges);
+        routeTrieBuildTime.stop();
+
         // Performance comparison
         PerformanceMetrics adjListPerf = measureGraphPerformance(adjListGraph, testNodes);
         PerformanceMetrics matrixPerf = measureGraphPerformance(matrixGraph, testNodes);
         PerformanceMetrics linearArrayPerf = measureGraphPerformance(linearArrayGraph, testNodes);
         PerformanceMetrics dynamicArrayPerf = measureGraphPerformance(dynamicArrayGraph, testNodes);
         PerformanceMetrics offsetArrayPerf = measureGraphPerformance(offsetArrayGraph, testNodes);
+        PerformanceMetrics routeTriePerf = measureGraphPerformance(routeTrieGraph, testNodes);
 
         return new GraphComparisonResult(
-                adjListGraph, matrixGraph, linearArrayGraph, dynamicArrayGraph, offsetArrayGraph,
+                adjListGraph, matrixGraph, linearArrayGraph, dynamicArrayGraph, offsetArrayGraph, routeTrieGraph,
                 adjListBuildTime.getElapsedMs(), matrixBuildTime.getElapsedMs(),
                 linearArrayBuildTime.getElapsedMs(), dynamicArrayBuildTime.getElapsedMs(),
-                offsetArrayBuildTime.getElapsedMs(),
-                adjListPerf, matrixPerf, linearArrayPerf, dynamicArrayPerf, offsetArrayPerf);
+                offsetArrayBuildTime.getElapsedMs(), routeTrieBuildTime.getElapsedMs(),
+                adjListPerf, matrixPerf, linearArrayPerf, dynamicArrayPerf, offsetArrayPerf, routeTriePerf);
     }
 
     /**
@@ -148,8 +157,13 @@ public class DataStructureComparator {
         offsetArrayGraph.finalizeCSR(); // Ensure CSR structure is built
         long offsetArrayMemory = offsetArrayGraph.getMemoryUsage();
 
+        // RoutePartitionedTrieGraph memory
+        RoutePartitionedTrieGraph routeTrieGraph = new RoutePartitionedTrieGraph();
+        buildGraph(routeTrieGraph, testEdges);
+        long routeTrieMemory = routeTrieGraph.getMemoryUsage();
+
         return new MemoryComparisonResult(adjListMemory, matrixMemory, linearArrayMemory, dynamicArrayMemory,
-                offsetArrayMemory,
+                offsetArrayMemory, routeTrieMemory,
                 nodes.size(), numEdges);
     }
 
@@ -241,39 +255,45 @@ public class DataStructureComparator {
         private final LinearArrayGraph linearArrayGraph;
         private final DynamicArrayGraph dynamicArrayGraph;
         private final OffsetArrayGraph offsetArrayGraph;
+        private final RoutePartitionedTrieGraph routeTrieGraph;
         private final long adjListBuildTime;
         private final long matrixBuildTime;
         private final long linearArrayBuildTime;
         private final long dynamicArrayBuildTime;
         private final long offsetArrayBuildTime;
+        private final long routeTrieBuildTime;
         private final PerformanceMetrics adjListPerf;
         private final PerformanceMetrics matrixPerf;
         private final PerformanceMetrics linearArrayPerf;
         private final PerformanceMetrics dynamicArrayPerf;
         private final PerformanceMetrics offsetArrayPerf;
+        private final PerformanceMetrics routeTriePerf;
 
         public GraphComparisonResult(AdjacencyListGraph adjListGraph, MatrixGraph matrixGraph,
                 LinearArrayGraph linearArrayGraph, DynamicArrayGraph dynamicArrayGraph,
-                OffsetArrayGraph offsetArrayGraph,
+                OffsetArrayGraph offsetArrayGraph, RoutePartitionedTrieGraph routeTrieGraph,
                 long adjListBuildTime, long matrixBuildTime, long linearArrayBuildTime, long dynamicArrayBuildTime,
-                long offsetArrayBuildTime,
+                long offsetArrayBuildTime, long routeTrieBuildTime,
                 PerformanceMetrics adjListPerf, PerformanceMetrics matrixPerf, PerformanceMetrics linearArrayPerf,
-                PerformanceMetrics dynamicArrayPerf, PerformanceMetrics offsetArrayPerf) {
+                PerformanceMetrics dynamicArrayPerf, PerformanceMetrics offsetArrayPerf, PerformanceMetrics routeTriePerf) {
             this.adjListGraph = adjListGraph;
             this.matrixGraph = matrixGraph;
             this.linearArrayGraph = linearArrayGraph;
             this.dynamicArrayGraph = dynamicArrayGraph;
             this.offsetArrayGraph = offsetArrayGraph;
+            this.routeTrieGraph = routeTrieGraph;
             this.adjListBuildTime = adjListBuildTime;
             this.matrixBuildTime = matrixBuildTime;
             this.linearArrayBuildTime = linearArrayBuildTime;
             this.dynamicArrayBuildTime = dynamicArrayBuildTime;
             this.offsetArrayBuildTime = offsetArrayBuildTime;
+            this.routeTrieBuildTime = routeTrieBuildTime;
             this.adjListPerf = adjListPerf;
             this.matrixPerf = matrixPerf;
             this.linearArrayPerf = linearArrayPerf;
             this.dynamicArrayPerf = dynamicArrayPerf;
             this.offsetArrayPerf = offsetArrayPerf;
+            this.routeTriePerf = routeTriePerf;
         }
 
         // Getters
@@ -297,6 +317,10 @@ public class DataStructureComparator {
             return offsetArrayGraph;
         }
 
+        public RoutePartitionedTrieGraph getRouteTrieGraph() {
+            return routeTrieGraph;
+        }
+
         public long getAdjListBuildTime() {
             return adjListBuildTime;
         }
@@ -315,6 +339,10 @@ public class DataStructureComparator {
 
         public long getOffsetArrayBuildTime() {
             return offsetArrayBuildTime;
+        }
+
+        public long getRouteTrieBuildTime() {
+            return routeTrieBuildTime;
         }
 
         public PerformanceMetrics getAdjListPerf() {
@@ -337,6 +365,10 @@ public class DataStructureComparator {
             return offsetArrayPerf;
         }
 
+        public PerformanceMetrics getRouteTriePerf() {
+            return routeTriePerf;
+        }
+
         @Override
         public String toString() {
             return String.format(
@@ -346,16 +378,18 @@ public class DataStructureComparator {
                             "LinearArray: %dms build, %dms neighbor lookup, %dms node check\n" +
                             "DynamicArray: %dms build, %dms neighbor lookup, %dms node check\n" +
                             "OffsetArray: %dms build, %dms neighbor lookup, %dms node check\n" +
-                            "Memory: AdjList ~%d bytes, Matrix %d bytes, LinearArray %d bytes, DynamicArray %d bytes, OffsetArray %d bytes",
+                            "RouteTrie: %dms build, %dms neighbor lookup, %dms node check\n" +
+                            "Memory: AdjList ~%d bytes, Matrix %d bytes, LinearArray %d bytes, DynamicArray %d bytes, OffsetArray %d bytes, RouteTrie %d bytes",
                     adjListBuildTime, adjListPerf.getNeighborLookupTime(), adjListPerf.getNodeCheckTime(),
                     matrixBuildTime, matrixPerf.getNeighborLookupTime(), matrixPerf.getNodeCheckTime(),
                     linearArrayBuildTime, linearArrayPerf.getNeighborLookupTime(), linearArrayPerf.getNodeCheckTime(),
                     dynamicArrayBuildTime, dynamicArrayPerf.getNeighborLookupTime(),
                     dynamicArrayPerf.getNodeCheckTime(),
                     offsetArrayBuildTime, offsetArrayPerf.getNeighborLookupTime(), offsetArrayPerf.getNodeCheckTime(),
+                    routeTrieBuildTime, routeTriePerf.getNeighborLookupTime(), routeTriePerf.getNodeCheckTime(),
                     estimateAdjacencyListMemory(adjListGraph), matrixGraph.getMemoryUsage(),
                     linearArrayGraph.getMemoryUsage(), dynamicArrayGraph.getMemoryUsage(),
-                    offsetArrayGraph.getMemoryUsage());
+                    offsetArrayGraph.getMemoryUsage(), routeTrieGraph.getMemoryUsage());
         }
     }
 
@@ -403,17 +437,19 @@ public class DataStructureComparator {
         private final long linearArrayMemory;
         private final long dynamicArrayMemory;
         private final long offsetArrayMemory;
+        private final long routeTrieMemory;
         private final int numNodes;
         private final int numEdges;
 
         public MemoryComparisonResult(long adjListMemory, long matrixMemory, long linearArrayMemory,
-                long dynamicArrayMemory, long offsetArrayMemory, int numNodes,
+                long dynamicArrayMemory, long offsetArrayMemory, long routeTrieMemory, int numNodes,
                 int numEdges) {
             this.adjListMemory = adjListMemory;
             this.matrixMemory = matrixMemory;
             this.linearArrayMemory = linearArrayMemory;
             this.dynamicArrayMemory = dynamicArrayMemory;
             this.offsetArrayMemory = offsetArrayMemory;
+            this.routeTrieMemory = routeTrieMemory;
             this.numNodes = numNodes;
             this.numEdges = numEdges;
         }
@@ -437,6 +473,10 @@ public class DataStructureComparator {
 
         public long getOffsetArrayMemory() {
             return offsetArrayMemory;
+        }
+
+        public long getRouteTrieMemory() {
+            return routeTrieMemory;
         }
 
         public int getNumNodes() {
@@ -463,6 +503,10 @@ public class DataStructureComparator {
             return matrixMemory > 0 ? (double) offsetArrayMemory / matrixMemory : 0;
         }
 
+        public double getRouteTrieMemoryRatio() {
+            return matrixMemory > 0 ? (double) routeTrieMemory / matrixMemory : 0;
+        }
+
         @Override
         public String toString() {
             return String.format(
@@ -472,11 +516,12 @@ public class DataStructureComparator {
                             "LinearArray: %d bytes\n" +
                             "DynamicArray: %d bytes\n" +
                             "OffsetArray: %d bytes\n" +
-                            "Ratios: AdjList/Matrix=%.2fx, LinearArray/Matrix=%.2fx, DynamicArray/Matrix=%.2fx, OffsetArray/Matrix=%.2fx",
+                            "RouteTrie: %d bytes\n" +
+                            "Ratios: AdjList/Matrix=%.2fx, LinearArray/Matrix=%.2fx, DynamicArray/Matrix=%.2fx, OffsetArray/Matrix=%.2fx, RouteTrie/Matrix=%.2fx",
                     numNodes, numEdges, adjListMemory, matrixMemory, linearArrayMemory, dynamicArrayMemory,
-                    offsetArrayMemory,
+                    offsetArrayMemory, routeTrieMemory,
                     getMemoryRatio(), getLinearArrayMemoryRatio(), getDynamicArrayMemoryRatio(),
-                    getOffsetArrayMemoryRatio());
+                    getOffsetArrayMemoryRatio(), getRouteTrieMemoryRatio());
         }
     }
 
