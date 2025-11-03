@@ -8,6 +8,11 @@ import src.graph.LinearArrayGraph;
 import src.graph.DynamicArrayGraph;
 import src.graph.OffsetArrayGraph;
 import src.graph.RoutePartitionedTrieGraph;
+import src.graph.DoublyLinkedListGraph;
+import src.graph.CircularLinkedListGraph;
+import src.graph.HalfEdgeGraph;
+import src.graph.LinkCutTreeGraph;
+import src.graph.EulerTourTreeGraph;
 import src.algo.*;
 import src.experiments.ExperimentRunner;
 import src.analysis.GraphAnalyzer;
@@ -109,55 +114,40 @@ public class Main {
         try {
             System.out.println("Reading CSV file: " + csvPath);
             CsvReader reader = new CsvReader();
+            System.out.println("Select graph implementation:");
+            System.out.println("1. AdjacencyListGraph (default)");
+            System.out.println("2. DoublyLinkedListGraph");
+            System.out.println("3. CircularLinkedListGraph");
+            System.out.println("4. HalfEdgeGraph");
+            System.out.println("5. LinkCutTreeGraph (adapter)");
+            System.out.println("6. EulerTourTreeGraph (adapter)");
+            int implChoice = getIntInput("Enter choice (1-6): ");
+            if (implChoice < 1 || implChoice > 6) implChoice = 1;
 
             switch (implChoice) {
-                case 1: { // AdjacencyListGraph
-                    Graph g = new AdjacencyListGraph();
-                    graph = reader.readCsvAndBuildGraph(csvPath, g);
+                case 2:
+                    graph = reader.readCsvAndBuildGraph(csvPath, DoublyLinkedListGraph::new);
                     break;
-                }
-                case 2: { // MatrixGraph requires capacity; build temp then copy
-                    Graph temp = reader.readCsvAndBuildGraph(csvPath); // build adjacency first
-                    int capacity = Math.max(temp.nodeCount() * 2, 16);
-                    MatrixGraph mg = new MatrixGraph(capacity);
-                    // copy nodes and edges
-                    for (String node : temp.nodes()) {
-                        mg.addNode(node);
-                    }
-                    for (String node : temp.nodes()) {
-                        for (src.graph.Edge e : temp.neighbors(node)) {
-                            mg.addEdge(node, e);
-                        }
-                    }
-                    graph = mg;
+                case 3:
+                    graph = reader.readCsvAndBuildGraph(csvPath, CircularLinkedListGraph::new);
                     break;
-                }
-                case 3: { // LinearArrayGraph
-                    Graph g = new LinearArrayGraph();
-                    graph = reader.readCsvAndBuildGraph(csvPath, g);
+                case 4:
+                    graph = reader.readCsvAndBuildGraph(csvPath, HalfEdgeGraph::new);
                     break;
-                }
-                case 4: { // DynamicArrayGraph
-                    Graph g = new DynamicArrayGraph();
-                    graph = reader.readCsvAndBuildGraph(csvPath, g);
+                case 5:
+                    graph = reader.readCsvAndBuildGraph(csvPath, LinkCutTreeGraph::new);
                     break;
-                }
-                case 5: { // OffsetArrayGraph
-                    OffsetArrayGraph g = new OffsetArrayGraph();
-                    reader.readCsvAndBuildGraph(csvPath, g);
-                    g.finalizeCSR();
-                    graph = g;
+                case 6:
+                    graph = reader.readCsvAndBuildGraph(csvPath, EulerTourTreeGraph::new);
                     break;
-                }
-                case 6: { // RoutePartitionedTrieGraph
-                    Graph g = new RoutePartitionedTrieGraph();
-                    graph = reader.readCsvAndBuildGraph(csvPath, g);
+                case 1:
+                default:
+                    graph = reader.readCsvAndBuildGraph(csvPath, AdjacencyListGraph::new);
                     break;
-                }
             }
-
+            
             System.out.println("Graph built successfully!");
-            System.out.println("Implementation: " + graph.getClass().getSimpleName());
+            System.out.println("Graph impl: " + graph.getClass().getSimpleName());
             System.out.println("Nodes: " + graph.nodeCount());
             System.out.println("Edges: " + graph.edgeCount());
 

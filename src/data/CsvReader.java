@@ -3,6 +3,7 @@ package src.data;
 import src.graph.AdjacencyListGraph;
 import src.graph.Edge;
 import src.graph.Graph;
+import java.util.function.Supplier;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -55,8 +56,52 @@ public class CsvReader {
             }
         }
         
-        // Build graph from aggregated routes
-        return buildGraphFromRoutes(routeMap);
+        // Build graph from aggregated routes (default to AdjacencyListGraph)
+        return buildGraphFromRoutes(routeMap, AdjacencyListGraph::new);
+    }
+
+    /**
+     * Reads a CSV file and builds a graph using the provided graph factory.
+     *
+     * @param csvPath Path to the CSV file
+     * @param graphFactory Factory to create a Graph implementation
+     * @return A graph containing all the flight routes
+     * @throws IOException if the file cannot be read
+     */
+    public Graph readCsvAndBuildGraph(String csvPath, Supplier<Graph> graphFactory) throws IOException {
+        Map<String, RouteAggregate> routeMap = new HashMap<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(csvPath))) {
+            String line = reader.readLine();
+            if (line == null) {
+                throw new IOException("CSV file is empty");
+            }
+
+            // Parse header to find column indices
+            String[] headers = parseCsvLine(line);
+            ColumnIndices indices = findColumnIndices(headers);
+
+            // Read data lines
+            int lineNumber = 1;
+            while ((line = reader.readLine()) != null) {
+                lineNumber++;
+                try {
+                    FlightRecord record = parseFlightRecord(line, indices);
+                    if (record != null) {
+                        String routeKey = record.getRouteKey();
+                        routeMap.computeIfAbsent(routeKey, 
+                            k -> new RouteAggregate(record.getOriginCountry(), 
+                                                  record.getDestinationCountry(), 
+                                                  record.getAirline()))
+                               .addRecord(record);
+                    }
+                } catch (Exception e) {
+                    System.err.printf("Warning: Skipping malformed line %d: %s%n", lineNumber, e.getMessage());
+                }
+            }
+        }
+
+        return buildGraphFromRoutes(routeMap, graphFactory);
     }
 
     /**
