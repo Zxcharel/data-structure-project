@@ -2,6 +2,12 @@ package src;
 
 import src.data.CsvReader;
 import src.graph.Graph;
+import src.graph.AdjacencyListGraph;
+import src.graph.DoublyLinkedListGraph;
+import src.graph.CircularLinkedListGraph;
+import src.graph.HalfEdgeGraph;
+import src.graph.LinkCutTreeGraph;
+import src.graph.EulerTourTreeGraph;
 import src.algo.*;
 import src.experiments.ExperimentRunner;
 import src.analysis.GraphAnalyzer;
@@ -90,9 +96,40 @@ public class Main {
         try {
             System.out.println("Reading CSV file: " + csvPath);
             CsvReader reader = new CsvReader();
-            graph = reader.readCsvAndBuildGraph(csvPath);
+            System.out.println("Select graph implementation:");
+            System.out.println("1. AdjacencyListGraph (default)");
+            System.out.println("2. DoublyLinkedListGraph");
+            System.out.println("3. CircularLinkedListGraph");
+            System.out.println("4. HalfEdgeGraph");
+            System.out.println("5. LinkCutTreeGraph (adapter)");
+            System.out.println("6. EulerTourTreeGraph (adapter)");
+            int implChoice = getIntInput("Enter choice (1-6): ");
+            if (implChoice < 1 || implChoice > 6) implChoice = 1;
+
+            switch (implChoice) {
+                case 2:
+                    graph = reader.readCsvAndBuildGraph(csvPath, DoublyLinkedListGraph::new);
+                    break;
+                case 3:
+                    graph = reader.readCsvAndBuildGraph(csvPath, CircularLinkedListGraph::new);
+                    break;
+                case 4:
+                    graph = reader.readCsvAndBuildGraph(csvPath, HalfEdgeGraph::new);
+                    break;
+                case 5:
+                    graph = reader.readCsvAndBuildGraph(csvPath, LinkCutTreeGraph::new);
+                    break;
+                case 6:
+                    graph = reader.readCsvAndBuildGraph(csvPath, EulerTourTreeGraph::new);
+                    break;
+                case 1:
+                default:
+                    graph = reader.readCsvAndBuildGraph(csvPath, AdjacencyListGraph::new);
+                    break;
+            }
             
             System.out.println("Graph built successfully!");
+            System.out.println("Graph impl: " + graph.getClass().getSimpleName());
             System.out.println("Nodes: " + graph.nodeCount());
             System.out.println("Edges: " + graph.edgeCount());
             
