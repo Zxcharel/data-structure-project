@@ -7,7 +7,9 @@ import java.util.function.Supplier;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -146,11 +148,35 @@ public class CsvReader {
     }
     
     /**
-     * Parses a CSV line, handling quoted fields
+     * Parses a CSV line, handling quoted fields properly
+     * Supports fields with commas inside quotes: "field, with comma"
      */
     private String[] parseCsvLine(String line) {
-        // Simple CSV parsing - assumes no commas within quoted fields for now
-        return line.split(",");
+        List<String> fields = new ArrayList<>();
+        StringBuilder currentField = new StringBuilder();
+        boolean inQuotes = false;
+        
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            
+            if (c == '"') {
+                // Toggle quote state
+                inQuotes = !inQuotes;
+                // Don't include quotes in the field value
+            } else if (c == ',' && !inQuotes) {
+                // End of field (not inside quotes)
+                fields.add(currentField.toString().trim());
+                currentField.setLength(0);
+            } else {
+                // Regular character - add to current field
+                currentField.append(c);
+            }
+        }
+        
+        // Add the last field
+        fields.add(currentField.toString().trim());
+        
+        return fields.toArray(new String[0]);
     }
     
     /**

@@ -15,13 +15,13 @@ This experiment provides a comprehensive, end-to-end performance comparison of a
 
 ### Test Setup
 1. **Graph Construction**: Build all graph types from the same CSV data (`data/cleaned_flights.csv`)
-2. **Query Generation**: Generate 100 random origin-destination pairs from the flight data
-3. **Path Categories**: 
-   - Short paths (2-3 hops): 30 queries
-   - Medium paths (5-8 hops): 40 queries
-   - Long paths (10+ hops): 30 queries
-4. **Algorithm**: Run Dijkstra's algorithm on each query for each graph structure
-5. **Multiple Runs**: Run each query 5 times per graph structure and average results
+   - **OffsetArrayGraph**: Automatically finalized after building for optimal performance
+2. **Query Generation**: Generate random origin-destination pairs from the flight data
+   - Queries are randomly selected from all available airport codes (nodes) in the graph
+   - Ensures origin ≠ destination for each query
+   - Number of queries is user-configurable (default: 100)
+3. **Algorithm**: Run Dijkstra's algorithm on each query for each graph structure
+4. **Multiple Runs**: Run each query 5 times per graph structure and average results to account for JVM warmup and variability
 
 ### Special Considerations
 - **MatrixGraph**: Requires `maxNodes` parameter - build temporary graph first to determine node count

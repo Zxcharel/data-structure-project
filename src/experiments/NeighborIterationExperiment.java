@@ -109,8 +109,10 @@ public class NeighborIterationExperiment {
             reader.readCsvAndBuildGraph(csvPath, LinearArrayGraph::new));
         graphs.put("DynamicArrayGraph", 
             reader.readCsvAndBuildGraph(csvPath, DynamicArrayGraph::new));
-        graphs.put("OffsetArrayGraph", 
-            reader.readCsvAndBuildGraph(csvPath, OffsetArrayGraph::new));
+        Graph offsetGraphTemp = reader.readCsvAndBuildGraph(csvPath, OffsetArrayGraph::new);
+        OffsetArrayGraph offsetGraph = (OffsetArrayGraph) offsetGraphTemp;
+        offsetGraph.finalizeCSR(); // Finalize for optimal performance
+        graphs.put("OffsetArrayGraph", offsetGraph);
         graphs.put("RoutePartitionedTrieGraph", 
             reader.readCsvAndBuildGraph(csvPath, RoutePartitionedTrieGraph::new));
         graphs.put("LinkCutTreeGraph", 

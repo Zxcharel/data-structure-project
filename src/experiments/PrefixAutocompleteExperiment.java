@@ -43,7 +43,10 @@ public class PrefixAutocompleteExperiment {
                 graph = reader.readCsvAndBuildGraph(csvPath);
                 break;
             case 3:
-                graph = reader.readCsvAndBuildGraph(csvPath, OffsetArrayGraph::new);
+                Graph offsetGraphTemp = reader.readCsvAndBuildGraph(csvPath, OffsetArrayGraph::new);
+                OffsetArrayGraph offsetGraph = (OffsetArrayGraph) offsetGraphTemp;
+                offsetGraph.finalizeCSR(); // Finalize for optimal performance
+                graph = offsetGraph;
                 break;
             case 4:
                 Graph tempGraph = reader.readCsvAndBuildGraph(csvPath);
