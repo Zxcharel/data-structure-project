@@ -57,7 +57,7 @@ public class CsvReader {
         }
         
         // Build graph from aggregated routes (default to AdjacencyListGraph)
-        return buildGraphFromRoutes(routeMap, AdjacencyListGraph::new);
+        return buildGraphFromRoutes(routeMap);
     }
 
     /**
@@ -101,7 +101,9 @@ public class CsvReader {
             }
         }
 
-        return buildGraphFromRoutes(routeMap, graphFactory);
+        Graph graph = graphFactory.get();
+        buildIntoGraphFromRoutes(routeMap, graph);
+        return graph;
     }
 
     /**

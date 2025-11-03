@@ -3,16 +3,18 @@ package src;
 import src.data.CsvReader;
 import src.graph.Graph;
 import src.graph.AdjacencyListGraph;
+import src.graph.SortedAdjacencyListGraph;
 import src.graph.MatrixGraph;
-import src.graph.LinearArrayGraph;
-import src.graph.DynamicArrayGraph;
-import src.graph.OffsetArrayGraph;
-import src.graph.RoutePartitionedTrieGraph;
+import src.graph.CSRGraph;
 import src.graph.DoublyLinkedListGraph;
 import src.graph.CircularLinkedListGraph;
 import src.graph.HalfEdgeGraph;
 import src.graph.LinkCutTreeGraph;
 import src.graph.EulerTourTreeGraph;
+import src.graph.LinearArrayGraph;
+import src.graph.DynamicArrayGraph;
+import src.graph.OffsetArrayGraph;
+import src.graph.RoutePartitionedTrieGraph;
 import src.algo.*;
 import src.experiments.ExperimentRunner;
 import src.analysis.GraphAnalyzer;
@@ -98,51 +100,79 @@ public class Main {
             csvPath = "data/cleaned_flights.csv";
         }
 
-        // Choose graph implementation
-        System.out.println("Choose graph implementation:");
-        System.out.println("1. AdjacencyListGraph (default)");
-        System.out.println("2. MatrixGraph");
-        System.out.println("3. LinearArrayGraph");
-        System.out.println("4. DynamicArrayGraph");
-        System.out.println("5. OffsetArrayGraph (CSR)");
-        System.out.println("6. RoutePartitionedTrieGraph");
-        int implChoice = getIntInput("Enter graph type (1-6): ");
-        if (implChoice < 1 || implChoice > 6) {
-            implChoice = 1;
-        }
-
         try {
             System.out.println("Reading CSV file: " + csvPath);
             CsvReader reader = new CsvReader();
-            System.out.println("Select graph implementation:");
-            System.out.println("1. AdjacencyListGraph (default)");
-            System.out.println("2. DoublyLinkedListGraph");
-            System.out.println("3. CircularLinkedListGraph");
-            System.out.println("4. HalfEdgeGraph");
-            System.out.println("5. LinkCutTreeGraph (adapter)");
-            System.out.println("6. EulerTourTreeGraph (adapter)");
-            int implChoice = getIntInput("Enter choice (1-6): ");
-            if (implChoice < 1 || implChoice > 6) implChoice = 1;
+            
+            // Choose graph implementation
+            System.out.println("\nSelect graph implementation:");
+            System.out.println(" 1. AdjacencyListGraph (default)");
+            System.out.println(" 2. SortedAdjacencyListGraph");
+            System.out.println(" 3. MatrixGraph");
+            System.out.println(" 4. CSRGraph");
+            System.out.println(" 5. DoublyLinkedListGraph");
+            System.out.println(" 6. CircularLinkedListGraph");
+            System.out.println(" 7. HalfEdgeGraph");
+            System.out.println(" 8. LinearArrayGraph");
+            System.out.println(" 9. DynamicArrayGraph");
+            System.out.println("10. OffsetArrayGraph");
+            System.out.println("11. RoutePartitionedTrieGraph");
+            System.out.println("12. LinkCutTreeGraph (adapter)");
+            System.out.println("13. EulerTourTreeGraph (adapter)");
+            int implChoice = getIntInput("\nEnter choice (1-13): ");
+            if (implChoice < 1 || implChoice > 13) implChoice = 1;
 
+            // Build graph based on choice
             switch (implChoice) {
+                case 1:
+                    // Default: AdjacencyListGraph
+                    graph = reader.readCsvAndBuildGraph(csvPath);
+                    break;
                 case 2:
-                    graph = reader.readCsvAndBuildGraph(csvPath, DoublyLinkedListGraph::new);
+                    graph = reader.readCsvAndBuildGraph(csvPath, SortedAdjacencyListGraph::new);
                     break;
                 case 3:
-                    graph = reader.readCsvAndBuildGraph(csvPath, CircularLinkedListGraph::new);
+                    // MatrixGraph needs maxNodes - build temp graph first to get node count
+                    Graph tempGraph = reader.readCsvAndBuildGraph(csvPath);
+                    int nodeCount = tempGraph.nodeCount();
+                    MatrixGraph matrixGraph = new MatrixGraph(nodeCount * 2); // Extra capacity
+                    reader.readCsvAndBuildGraph(csvPath, matrixGraph);
+                    graph = matrixGraph;
                     break;
                 case 4:
-                    graph = reader.readCsvAndBuildGraph(csvPath, HalfEdgeGraph::new);
+                    // CSRGraph needs to be built from another graph
+                    Graph tempGraphForCSR = reader.readCsvAndBuildGraph(csvPath);
+                    graph = new CSRGraph(tempGraphForCSR);
                     break;
                 case 5:
-                    graph = reader.readCsvAndBuildGraph(csvPath, LinkCutTreeGraph::new);
+                    graph = reader.readCsvAndBuildGraph(csvPath, DoublyLinkedListGraph::new);
                     break;
                 case 6:
+                    graph = reader.readCsvAndBuildGraph(csvPath, CircularLinkedListGraph::new);
+                    break;
+                case 7:
+                    graph = reader.readCsvAndBuildGraph(csvPath, HalfEdgeGraph::new);
+                    break;
+                case 8:
+                    graph = reader.readCsvAndBuildGraph(csvPath, LinearArrayGraph::new);
+                    break;
+                case 9:
+                    graph = reader.readCsvAndBuildGraph(csvPath, DynamicArrayGraph::new);
+                    break;
+                case 10:
+                    graph = reader.readCsvAndBuildGraph(csvPath, OffsetArrayGraph::new);
+                    break;
+                case 11:
+                    graph = reader.readCsvAndBuildGraph(csvPath, RoutePartitionedTrieGraph::new);
+                    break;
+                case 12:
+                    graph = reader.readCsvAndBuildGraph(csvPath, LinkCutTreeGraph::new);
+                    break;
+                case 13:
                     graph = reader.readCsvAndBuildGraph(csvPath, EulerTourTreeGraph::new);
                     break;
-                case 1:
                 default:
-                    graph = reader.readCsvAndBuildGraph(csvPath, AdjacencyListGraph::new);
+                    graph = reader.readCsvAndBuildGraph(csvPath);
                     break;
             }
             
