@@ -66,6 +66,12 @@ public class Main {
                 case 7:
                     System.out.println("Goodbye!");
                     return;
+                case 8:
+                    runSortedVsUnsortedExperiment();
+                    break;
+                case 9:
+                    runCSRvsAdjacencyExperiment();
+                    break;
                 default:
                     System.out.println("Invalid choice. Please try again.");
             }
@@ -85,6 +91,8 @@ public class Main {
         System.out.println("4. Graph analysis");
         System.out.println("5. Data structure comparison");
         System.out.println("6. Generate analysis report");
+        System.out.println("8. Experiment: Sorted vs Unsorted Edges");
+        System.out.println("9. Experiment: CSR vs Adjacency Lists");
         System.out.println("7. Exit");
         System.out.println();
     }
@@ -273,31 +281,65 @@ public class Main {
      * Menu option 3: Run experiments
      */
     private static void runExperiments() {
-        if (graph == null) {
-            System.out.println("Error: No graph loaded. Please build graph from CSV first.");
-            return;
-        }
-
         System.out.println("=== Run Experiments ===");
-
-        int numQueries = getIntInput("Number of random queries (default 50): ");
-        if (numQueries <= 0) {
-            numQueries = 50;
+        System.out.println("Select experiment type:");
+        System.out.println("1. Algorithm comparison (requires loaded graph)");
+        System.out.println("2. Graph scaling experiment (generates own test data)");
+        
+        int expChoice = getIntInput("Enter choice (1-2): ");
+        if (expChoice < 1 || expChoice > 2) {
+            expChoice = 1;
         }
+        
+        if (expChoice == 1) {
+            // Original algorithm comparison experiment
+            if (graph == null) {
+                System.out.println("Error: No graph loaded. Please build graph from CSV first.");
+                return;
+            }
 
-        try {
-            ExperimentRunner runner = new ExperimentRunner(graph);
-            runner.runExperiments(numQueries, "out/experiments");
+            int numQueries = getIntInput("Number of random queries (default 50): ");
+            if (numQueries <= 0) {
+                numQueries = 50;
+            }
 
-            System.out.println("Experiments completed successfully!");
-            System.out.println("Results written to:");
-            System.out.println("- out/experiments/algorithms.csv");
-            System.out.println("- out/experiments/README.md");
+            try {
+                ExperimentRunner runner = new ExperimentRunner(graph);
+                runner.runExperiments(numQueries, "out/experiments");
 
-        } catch (IOException e) {
-            System.err.println("Error running experiments: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
+                System.out.println("Experiments completed successfully!");
+                System.out.println("Results written to:");
+                System.out.println("- out/experiments/algorithms.csv");
+                System.out.println("- out/experiments/README.md");
+
+            } catch (IOException e) {
+                System.err.println("Error running experiments: " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("Error: " + e.getMessage());
+            }
+        } else {
+            // Scaling experiment
+            if (graph == null || graph.nodeCount() == 0) {
+                System.err.println("Error: No graph loaded. Please load a graph from CSV first (menu option 1).");
+                return;
+            }
+            
+            try {
+                ExperimentRunner runner = new ExperimentRunner(graph); // Pass graph if loaded
+                runner.runScalingExperiment("out/scaling_experiment");
+
+                System.out.println("Scaling experiment completed successfully!");
+                System.out.println("Results written to:");
+                System.out.println("- out/scaling_experiment/scaling_results.csv");
+                System.out.println("- out/scaling_experiment/scaling_analysis.md");
+
+            } catch (IllegalArgumentException e) {
+                System.err.println("Error: " + e.getMessage());
+            } catch (IOException e) {
+                System.err.println("Error running scaling experiment: " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("Error: " + e.getMessage());
+            }
         }
     }
 
@@ -545,5 +587,89 @@ public class Main {
         }
 
         return queries;
+    }
+
+    /**
+     * Menu option 8: Run sorted vs unsorted experiment
+     */
+    private static void runSortedVsUnsortedExperiment() {
+        System.out.println("=== Experiment: Sorted vs Unsorted Edges ===");
+        System.out.println("Tests whether pre-sorting adjacency lists provides performance benefits.");
+        System.out.println();
+
+        String csvPath = getStringInput("Enter CSV path (press Enter for default 'data/cleaned_flights.csv'): ");
+        if (csvPath.trim().isEmpty()) {
+            csvPath = "data/cleaned_flights.csv";
+        }
+
+        int numQueries = getIntInput("Number of random queries (default 50): ");
+        if (numQueries <= 0) {
+            numQueries = 50;
+        }
+
+        String outputDir = getStringInput("Enter output directory (press Enter for 'out/experiments/sorted_vs_unsorted'): ");
+        if (outputDir.trim().isEmpty()) {
+            outputDir = "out/experiments/sorted_vs_unsorted";
+        }
+
+        try {
+            // Create a dummy graph for the ExperimentRunner - it will rebuild its own
+            Graph dummyGraph = new AdjacencyListGraph();
+            ExperimentRunner runner = new ExperimentRunner(dummyGraph);
+            runner.experimentSortedVsUnsorted(csvPath, numQueries, outputDir);
+
+            System.out.println("\nExperiment completed successfully!");
+            System.out.println("Results written to:");
+            System.out.println("- " + outputDir + "/sorted_vs_unsorted.csv");
+            System.out.println("- " + outputDir + "/sorted_vs_unsorted_README.md");
+
+        } catch (IOException e) {
+            System.err.println("Error running experiment: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Menu option 9: Run CSR vs adjacency experiment
+     */
+    private static void runCSRvsAdjacencyExperiment() {
+        System.out.println("=== Experiment: CSR Cache-Friendliness vs Adjacency Lists ===");
+        System.out.println("Tests whether cache-friendly layouts beat pointer overhead.");
+        System.out.println();
+
+        String csvPath = getStringInput("Enter CSV path (press Enter for default 'data/cleaned_flights.csv'): ");
+        if (csvPath.trim().isEmpty()) {
+            csvPath = "data/cleaned_flights.csv";
+        }
+
+        int numQueries = getIntInput("Number of random queries (default 50): ");
+        if (numQueries <= 0) {
+            numQueries = 50;
+        }
+
+        String outputDir = getStringInput("Enter output directory (press Enter for 'out/experiments/csr_vs_adjacency'): ");
+        if (outputDir.trim().isEmpty()) {
+            outputDir = "out/experiments/csr_vs_adjacency";
+        }
+
+        try {
+            // Create a dummy graph for the ExperimentRunner - it will rebuild its own
+            Graph dummyGraph = new AdjacencyListGraph();
+            ExperimentRunner runner = new ExperimentRunner(dummyGraph);
+            runner.experimentCSRvsAdjacency(csvPath, numQueries, outputDir);
+
+            System.out.println("\nExperiment completed successfully!");
+            System.out.println("Results written to:");
+            System.out.println("- " + outputDir + "/csr_vs_adjacency.csv");
+            System.out.println("- " + outputDir + "/csr_vs_adjacency_README.md");
+
+        } catch (IOException e) {
+            System.err.println("Error running experiment: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
