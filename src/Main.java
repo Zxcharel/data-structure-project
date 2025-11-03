@@ -273,31 +273,65 @@ public class Main {
      * Menu option 3: Run experiments
      */
     private static void runExperiments() {
-        if (graph == null) {
-            System.out.println("Error: No graph loaded. Please build graph from CSV first.");
-            return;
-        }
-
         System.out.println("=== Run Experiments ===");
-
-        int numQueries = getIntInput("Number of random queries (default 50): ");
-        if (numQueries <= 0) {
-            numQueries = 50;
+        System.out.println("Select experiment type:");
+        System.out.println("1. Algorithm comparison (requires loaded graph)");
+        System.out.println("2. Graph scaling experiment (generates own test data)");
+        
+        int expChoice = getIntInput("Enter choice (1-2): ");
+        if (expChoice < 1 || expChoice > 2) {
+            expChoice = 1;
         }
+        
+        if (expChoice == 1) {
+            // Original algorithm comparison experiment
+            if (graph == null) {
+                System.out.println("Error: No graph loaded. Please build graph from CSV first.");
+                return;
+            }
 
-        try {
-            ExperimentRunner runner = new ExperimentRunner(graph);
-            runner.runExperiments(numQueries, "out/experiments");
+            int numQueries = getIntInput("Number of random queries (default 50): ");
+            if (numQueries <= 0) {
+                numQueries = 50;
+            }
 
-            System.out.println("Experiments completed successfully!");
-            System.out.println("Results written to:");
-            System.out.println("- out/experiments/algorithms.csv");
-            System.out.println("- out/experiments/README.md");
+            try {
+                ExperimentRunner runner = new ExperimentRunner(graph);
+                runner.runExperiments(numQueries, "out/experiments");
 
-        } catch (IOException e) {
-            System.err.println("Error running experiments: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
+                System.out.println("Experiments completed successfully!");
+                System.out.println("Results written to:");
+                System.out.println("- out/experiments/algorithms.csv");
+                System.out.println("- out/experiments/README.md");
+
+            } catch (IOException e) {
+                System.err.println("Error running experiments: " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("Error: " + e.getMessage());
+            }
+        } else {
+            // Scaling experiment
+            if (graph == null || graph.nodeCount() == 0) {
+                System.err.println("Error: No graph loaded. Please load a graph from CSV first (menu option 1).");
+                return;
+            }
+            
+            try {
+                ExperimentRunner runner = new ExperimentRunner(graph); // Pass graph if loaded
+                runner.runScalingExperiment("out/scaling_experiment");
+
+                System.out.println("Scaling experiment completed successfully!");
+                System.out.println("Results written to:");
+                System.out.println("- out/scaling_experiment/scaling_results.csv");
+                System.out.println("- out/scaling_experiment/scaling_analysis.md");
+
+            } catch (IllegalArgumentException e) {
+                System.err.println("Error: " + e.getMessage());
+            } catch (IOException e) {
+                System.err.println("Error running scaling experiment: " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("Error: " + e.getMessage());
+            }
         }
     }
 

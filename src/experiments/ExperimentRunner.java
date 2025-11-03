@@ -2,6 +2,7 @@ package src.experiments;
 
 import src.algo.*;
 import src.graph.Graph;
+import src.graph.Edge;
 import src.util.IOUtils;
 import java.io.IOException;
 import java.util.*;
@@ -17,6 +18,14 @@ public class ExperimentRunner {
     public ExperimentRunner(Graph graph) {
         this.graph = graph;
         this.random = new Random(42); // Fixed seed for reproducible results
+    }
+    
+    /**
+     * Constructor for experiments that don't need an existing graph
+     */
+    public ExperimentRunner(Graph graph, Random random) {
+        this.graph = graph;
+        this.random = random != null ? random : new Random(42);
     }
     
     /**
@@ -77,8 +86,9 @@ public class ExperimentRunner {
         System.out.printf("Experiments completed. Results written to %s%n", outputDir);
     }
     
+    
     /**
-     * Generates random queries from the available nodes
+     * Generates random queries from the available nodes (uses graph's airlines)
      */
     private List<ExperimentQuery> generateRandomQueries(List<String> nodes, int numQueries) {
         List<ExperimentQuery> queries = new ArrayList<>();
@@ -198,6 +208,18 @@ public class ExperimentRunner {
         report.append("- Results may vary based on graph structure and query patterns\n");
         
         IOUtils.writeMarkdown(outputPath, report.toString());
+    }
+    
+    /**
+     * Experiment 3: The Graph Size Deception
+     * Delegates to ScalingExperiment class
+     * 
+     * @param outputDir Directory to write results
+     * @throws IOException if files cannot be written
+     */
+    public void runScalingExperiment(String outputDir) throws IOException {
+        ScalingExperiment experiment = new ScalingExperiment();
+        experiment.run(outputDir, graph); // Pass the graph if available
     }
     
     /**
