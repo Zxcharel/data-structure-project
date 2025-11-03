@@ -1,0 +1,23 @@
+# Compiled class files
+out/
+*.class
+
+# Generated analysis reports and data
+out/analysis/
+out/experiments/
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
