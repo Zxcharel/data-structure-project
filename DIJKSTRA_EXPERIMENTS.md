@@ -8,110 +8,170 @@
 
 ## Overview
 
-This document summarizes the top 3 most interesting experiments for comparing graph data structures using Dijkstra's algorithm. Each experiment has been detailed in a separate document for comprehensive analysis.
+This document details the top 3 most interesting experiments for comparing graph data structures using Dijkstra's algorithm. Each experiment tests different aspects of performance to provide a complete understanding of when and why to choose each graph implementation.
+
+**Java Test Files**:
+- `src/experiments/NeighborIterationExperiment.java` - Experiment 1
+- `src/experiments/ScalabilityExperiment.java` - Experiment 2
+- `src/experiments/PathfindingBenchmarkExperiment.java` - Experiment 3
+
 
 ---
 
 ## 🎯 TOP 3 MOST INTERESTING EXPERIMENTS
 
-### ⭐ Experiment 3: Neighbor Iteration Performance (MOST INTERESTING)
+### ⭐ Experiment 1: Neighbor Iteration Performance (MOST INTERESTING)
 
-**Document**: [`EXPERIMENT_3_NEIGHBOR_ITERATION.md`](EXPERIMENT_3_NEIGHBOR_ITERATION.md)
+**Research Question**: Which graph structure provides the fastest neighbor iteration (Dijkstra's bottleneck operation)?
 
-**Why it's the most interesting**:
+#### Overview
+
+This experiment isolates and measures the most critical operation in Dijkstra's algorithm: `graph.neighbors(node)`. This method is called thousands of times during pathfinding, making it the primary performance bottleneck. By measuring neighbor iteration performance in isolation, we can understand WHY certain graph structures perform better than others.
+
+#### Why It's Most Interesting
+
 - **Directly targets Dijkstra's bottleneck**: `graph.neighbors()` is called thousands of times
 - **Reveals core performance differences**: Shows how data layout fundamentally affects algorithm speed
 - **Actionable insights**: Clear winner/loser with measurable impact
 - **Academic value**: Demonstrates understanding of algorithm-optimized data structures
 
-**Key Metrics**:
-- Time to iterate neighbors for single node
-- Aggregate iteration time across entire Dijkstra run
-- Percentage of Dijkstra time spent in neighbor iteration
-- Iteration speed vs node degree (edges per node)
+#### Methodology
 
-**Expected Findings**:
-- CSRGraph/OffsetArrayGraph: 20-40% faster iteration than ArrayList
-- MatrixGraph: Slow for sparse graphs (checks empty cells)
-- SortedAdjacencyListGraph: May help if Dijkstra benefits from sorted edges
+**Isolation Approach**:
+1. **Direct Measurement**: Time `graph.neighbors(node)` calls in isolation
+2. **Within-Dijkstra Tracking**: Instrument Dijkstra to track time spent in neighbor iteration
+3. **Bulk Testing**: Test neighbor iteration for all nodes in the graph
+4. **Degree-Based Analysis**: Categorize by node degree (edges per node)
+
+**Node Degree Categories**:
+- **Sparse Nodes** (1-5 neighbors): Represents typical airport connections
+- **Medium Nodes** (10-20 neighbors): Common for hub airports
+- **Dense Nodes** (50+ neighbors): Major international hubs
+
+#### Metrics Collected
+
+1. **Single Node Iteration Time** (nanoseconds): Time to call `graph.neighbors(node)` and iterate all edges
+2. **Aggregate Iteration Time**: Total time spent in `graph.neighbors()` during complete Dijkstra run
+3. **Iteration Time Per Edge**: Normalizes for node degree
+4. **Percentage of Dijkstra Time**: Shows how much of algorithm is spent in this operation (expected: 60-80%)
+
+#### Hypothesis
+
+- **Array-Based** (CSR, OffsetArray, LinearArray): Fastest iteration (sequential access) - Expected 20-50% faster than baseline
+- **List-Based** (AdjacencyList): Baseline performance
+- **Dense Structures** (MatrixGraph): Slowest for sparse graphs (must check all nodes) - Expected 50-100% slower
+
+#### Expected Outcomes
+
+- **Clear Winner**: Array-based structures (CSRGraph, OffsetArrayGraph) dominate
+- **Cache Impact**: 20-50% improvement from sequential access
+- **Practical Impact**: 30-50% overall speedup possible with best structures
+
+**This experiment provides the "WHY"** - it explains why certain graph structures perform better.
 
 ---
 
-### ⭐ Experiment 4: Scalability Analysis (SECOND MOST INTERESTING)
+### ⭐ Experiment 2: Scalability Analysis (SECOND MOST INTERESTING)
 
-**Document**: [`EXPERIMENT_4_SCALABILITY.md`](EXPERIMENT_4_SCALABILITY.md)
+**Research Question**: How do graph structures perform as graph size increases?
 
-**Why it's very interesting**:
+#### Overview
+
+This experiment tests how each graph data structure scales as the graph grows in size. By testing the same structures on progressively larger subsets of the data, we can identify which structures scale linearly, quadratically, or exhibit other growth patterns.
+
+#### Why It's Very Interesting
+
 - **Practical importance**: Real-world graphs grow over time
-- **Reveals big-O behavior**: Shows theoretical complexity in practice
+- **Reveals big-O behavior**: Shows theoretical complexity (O notation) in real measurements
 - **Decision framework**: Helps choose structure based on expected size
 - **Academic rigor**: Demonstrates understanding of algorithmic complexity
 
-**Key Metrics**:
-- Build time growth (O(?))
-- Dijkstra runtime growth (O(?))
-- Memory usage growth (O(?))
-- Performance degradation ratio as size doubles
+#### Methodology
 
-**Expected Findings**:
-- CSRGraph: Linear scaling, best for large sparse graphs
-- MatrixGraph: Quadratic memory, poor scalability
-- Different structures excel at different size ranges
-- Break-even points where one structure becomes better
+**Graph Size Subsets**:
+1. **10% subset**: ~300 nodes, ~500 edges
+2. **25% subset**: ~750 nodes, ~1,250 edges
+3. **50% subset**: ~1,500 nodes, ~2,500 edges
+4. **75% subset**: ~2,250 nodes, ~3,750 edges
+5. **100% subset**: ~3,000 nodes, ~5,000 edges (full dataset)
+
+For each size subset:
+1. Build all graph types from that subset
+2. Measure build time for each structure
+3. Run identical pathfinding queries on each structure
+4. Measure Dijkstra runtime for each query
+5. Measure memory usage (peak during execution)
+
+#### Metrics Collected
+
+1. **Build Time Growth**: Time to construct graph - Analyze O(?) complexity
+2. **Dijkstra Runtime Growth**: Time to execute Dijkstra - Analyze O(?) complexity
+3. **Memory Usage Growth**: Peak memory during execution
+4. **Performance Degradation Ratio**: How much slower when size doubles (ideal: 2x slower for linear)
+
+#### Hypothesis
+
+- **Sparse Structures** (CSR, OffsetArray): Scale linearly O(V+E) - Expected: Best scaling
+- **Dense Structures** (MatrixGraph): Scale quadratically O(V²) - Expected: Poor scalability
+- **List-Based**: Scale well but with more overhead
+
+#### Expected Outcomes
+
+- **Best for Large Graphs**: CSRGraph, OffsetArrayGraph (linear scaling)
+- **Best for Small Graphs**: AdjacencyListGraph (simpler, fast enough)
+- **Worst Scalability**: MatrixGraph (quadratic memory and query time)
+- **Break-Even Points**: Different structures excel at different sizes
+
+**This experiment provides the "WHEN"** - it shows when (at what sizes) different graph structures are optimal.
 
 ---
 
-### ⭐ Experiment 1: Pathfinding Performance Benchmark (THIRD MOST INTERESTING)
+### ⭐ Experiment 3: Pathfinding Performance Benchmark (THIRD MOST INTERESTING)
 
-**Document**: [`EXPERIMENT_1_PATHFINDING_BENCHMARK.md`](EXPERIMENT_1_PATHFINDING_BENCHMARK.md)
+**Research Question**: How do different graph data structures affect Dijkstra's algorithm runtime and efficiency?
 
-**Why it's interesting**:
+#### Overview
+
+This experiment provides a comprehensive, end-to-end performance comparison of all graph implementations when running Dijkstra's algorithm. It tests complete pathfinding scenarios to identify which structures perform best in real-world usage.
+
+#### Why It's Interesting
+
 - **Complete picture**: Tests end-to-end performance (most realistic)
 - **Comprehensive comparison**: All structures on same queries
 - **Multiple metrics**: Runtime, efficiency, memory - complete analysis
 - **Practical relevance**: Answers "which should I use?"
 
-**Key Metrics**:
-- Total runtime per query
-- Nodes visited (algorithm efficiency)
-- Edges relaxed (edge processing overhead)
-- Memory footprint during execution
-- Success rate (path found vs not found)
+#### Methodology
 
-**Expected Findings**:
-- Overall winner for your use case
-- Which structure is best for different query types
-- Complete performance profile
-- Clear recommendations
+**Test Setup**:
+1. **Graph Construction**: Build all graph types from the same CSV data
+2. **Query Generation**: Generate 100 random origin-destination pairs from the flight data
+3. **Path Categories**: 
+   - Short paths (2-3 hops): 30 queries
+   - Medium paths (5-8 hops): 40 queries
+   - Long paths (10+ hops): 30 queries
+4. **Algorithm**: Run Dijkstra's algorithm on each query for each graph structure
+5. **Multiple Runs**: Run each query 5 times per graph structure and average results
 
----
+#### Metrics Collected
 
-## Comparison of Top 3
+1. **Total Runtime (ms)**: End-to-end Dijkstra execution time
+2. **Nodes Visited**: Number of nodes processed by Dijkstra
+3. **Edges Relaxed**: Number of edges examined during pathfinding
+4. **Memory Footprint**: Peak memory usage during Dijkstra execution
+5. **Success Rate**: Percentage of queries where path was found
 
-| Aspect | Exp 3 (Neighbor Iteration) | Exp 4 (Scalability) | Exp 1 (Benchmark) |
-|--------|---------------------------|---------------------|-------------------|
-| **Academic Value** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **Practical Value** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **Uniqueness** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
-| **Insight Depth** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **Actionability** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+#### Hypothesis
 
----
+- **CSRGraph and OffsetArrayGraph**: Should be fastest (cache-friendly) - Expected: 20-40% faster
+- **SortedAdjacencyListGraph**: May help (edges pre-sorted) - Expected: 10-20% faster
+- **MatrixGraph**: Likely slowest for sparse graphs - Expected: 50-100% slower
 
-## Recommendation
+#### Expected Outcomes
 
-**Focus on Experiments 3, 4, and 1** in that order:
-1. **Experiment 3** reveals the WHY (iteration performance)
-2. **Experiment 4** shows the WHEN (scalability characteristics)  
-3. **Experiment 1** provides the WHAT (overall performance)
+- **Overall winner**: CSRGraph or OffsetArrayGraph (best balance)
+- **Best memory**: CSRGraph, OffsetArrayGraph (compact representation)
+- **Best speed**: CSRGraph (cache-optimized)
+- **Worst performance**: MatrixGraph (poor for sparse graphs)
 
-Together, they tell a complete story: which structure, why it's fast, and when to use it.
-
----
-
-## Experiment Documents
-
-- **[Experiment 1: Pathfinding Performance Benchmark](EXPERIMENT_1_PATHFINDING_BENCHMARK.md)** - Complete end-to-end performance comparison
-- **[Experiment 3: Neighbor Iteration Performance](EXPERIMENT_3_NEIGHBOR_ITERATION.md)** - Isolates Dijkstra's critical bottleneck operation
-- **[Experiment 4: Scalability Analysis](EXPERIMENT_4_SCALABILITY.md)** - Performance across different graph sizes
-
+**This experiment provides the "WHAT"** - a complete performance profile of all graph structures.

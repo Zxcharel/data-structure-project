@@ -10,11 +10,11 @@ A Java application that finds optimal airline routes based on review ratings usi
   - SortedAdjacencyListGraph (edges sorted by weight)
   - MatrixGraph (dense matrix representation)
   - CSRGraph (compressed sparse row, memory-efficient)
-- **Multiple algorithms**: Implements Dijkstra's algorithm and A* with different heuristics
+- **Algorithm**: Implements Dijkstra's algorithm for pathfinding
 - **Rating-based weights**: Converts airline ratings to edge weights using a weighted formula
 - **Constraint support**: Filter routes by maximum stops, airline allowlist/blocklist
 - **Data structure comparisons**: Automated performance and memory comparison between graph implementations
-- **Experiments**: Automated performance comparison between algorithms
+- **Experiments**: Three comprehensive Dijkstra experiments comparing graph data structures
 - **Console interface**: Simple menu-driven user interface
 
 ## Weight Calculation
@@ -38,7 +38,7 @@ java -cp out src.Main
 
 1. **Build graph from CSV**: Load flight data from a CSV file
 2. **Query best route**: Find optimal routes between countries
-3. **Run experiments**: Compare algorithm performance automatically
+3. **Run Dijkstra experiments**: Compare graph structure performance (3 experiments: Neighbor Iteration, Scalability, Pathfinding Benchmark)
 4. **Graph analysis**: Analyze graph structure and statistics
 5. **Data structure comparison**: Compare different graph implementations (AdjList, SortedAdjList, Matrix, CSR)
 6. **Generate analysis report**: Create comprehensive analysis reports
@@ -77,12 +77,13 @@ src/
 ├── algo/                     # Pathfinding algorithms
 │   ├── PathResult.java
 │   ├── Constraints.java
-│   ├── Dijkstra.java
-│   └── AStar.java
+│   └── Dijkstra.java
 ├── comparison/               # Data structure comparison
 │   └── DataStructureComparator.java
-├── experiments/              # Performance testing
-│   └── ExperimentRunner.java
+├── experiments/              # Dijkstra performance testing
+│   ├── NeighborIterationExperiment.java
+│   ├── ScalabilityExperiment.java
+│   └── PathfindingBenchmarkExperiment.java
 ├── analysis/                 # Graph analysis tools
 │   ├── GraphAnalyzer.java
 │   ├── CentralityMetrics.java
@@ -94,7 +95,7 @@ src/
 
 ## Graph Data Structures
 
-The project implements four graph data structures for comparison:
+The project implements 13 graph data structures for comparison, including:
 
 ### AdjacencyListGraph
 - Standard adjacency list using HashMap and ArrayList
@@ -152,7 +153,7 @@ ExtendedMemoryComparisonResult memResult =
 System.out.println(memResult);
 ```
 
-See `HOW_TO_TEST.md` for detailed testing examples.
+See `DIJKSTRA_EXPERIMENTS.md` for detailed experiment documentation.
 
 ## Example Output
 

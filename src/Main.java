@@ -16,7 +16,6 @@ import src.graph.DynamicArrayGraph;
 import src.graph.OffsetArrayGraph;
 import src.graph.RoutePartitionedTrieGraph;
 import src.algo.*;
-import src.experiments.ExperimentRunner;
 import src.analysis.GraphAnalyzer;
 import src.analysis.CentralityMetrics;
 import src.comparison.DataStructureComparator;
@@ -81,7 +80,7 @@ public class Main {
         System.out.println("Main Menu:");
         System.out.println("1. Build graph from CSV");
         System.out.println("2. Query best route");
-        System.out.println("3. Run experiments");
+        System.out.println("3. Run Dijkstra experiments (graph structure comparison)");
         System.out.println("4. Graph analysis");
         System.out.println("5. Data structure comparison");
         System.out.println("6. Generate analysis report");
@@ -221,45 +220,16 @@ public class Main {
             return;
         }
 
-        // Algorithm selection
-        System.out.println("Select algorithm:");
-        System.out.println("1. Dijkstra (default)");
-        System.out.println("2. A* (Zero heuristic)");
-        System.out.println("3. A* (Hop heuristic)");
-
-        int algoChoice = getIntInput("Enter algorithm choice (1-3): ");
-        if (algoChoice < 1 || algoChoice > 3) {
-            algoChoice = 1; // Default to Dijkstra
-        }
-
         // Optional constraints
         Constraints constraints = getConstraints();
 
-        // Run the selected algorithm
-        PathResult result = null;
-        String algorithmName = "";
-
-        switch (algoChoice) {
-            case 1:
-                Dijkstra dijkstra = new Dijkstra();
-                result = dijkstra.findPath(graph, origin, destination, constraints);
-                algorithmName = "Dijkstra";
-                break;
-            case 2:
-                AStar aStarZero = new AStar();
-                result = aStarZero.findPath(graph, origin, destination, new AStar.ZeroHeuristic(), constraints);
-                algorithmName = "A* (Zero heuristic)";
-                break;
-            case 3:
-                AStar aStarHop = new AStar();
-                result = aStarHop.findPath(graph, origin, destination, new AStar.HopHeuristic(), constraints);
-                algorithmName = "A* (Hop heuristic)";
-                break;
-        }
+        // Run Dijkstra's algorithm
+        Dijkstra dijkstra = new Dijkstra();
+        PathResult result = dijkstra.findPath(graph, origin, destination, constraints);
 
         // Display results
         System.out.println("\n=== Results ===");
-        System.out.println("Algorithm: " + algorithmName);
+        System.out.println("Algorithm: Dijkstra");
         System.out.println(result.getDetailedSummary());
 
         // ASCII route visualization
@@ -270,35 +240,106 @@ public class Main {
     }
 
     /**
-     * Menu option 3: Run experiments
+     * Menu option 3: Run Dijkstra experiments (graph structure comparison)
      */
     private static void runExperiments() {
-        if (graph == null) {
-            System.out.println("Error: No graph loaded. Please build graph from CSV first.");
+        System.out.println("=== Dijkstra Experiments: Graph Structure Comparison ===");
+        System.out.println("Select an experiment to run:");
+        System.out.println("1. Experiment 1: Neighbor Iteration Performance (MOST INTERESTING)");
+        System.out.println("2. Experiment 2: Scalability Analysis");
+        System.out.println("3. Experiment 3: Pathfinding Performance Benchmark");
+        System.out.println("4. Run all experiments");
+        System.out.println("5. Back to main menu");
+
+        int expChoice = getIntInput("\nEnter experiment choice (1-5): ");
+        if (expChoice < 1 || expChoice > 5) {
+            System.out.println("Invalid choice.");
             return;
         }
 
-        System.out.println("=== Run Experiments ===");
-
-        int numQueries = getIntInput("Number of random queries (default 50): ");
-        if (numQueries <= 0) {
-            numQueries = 50;
-        }
-
+        String csvPath = "data/cleaned_flights.csv";
+        
         try {
-            ExperimentRunner runner = new ExperimentRunner(graph);
-            runner.runExperiments(numQueries, "out/experiments");
-
-            System.out.println("Experiments completed successfully!");
-            System.out.println("Results written to:");
-            System.out.println("- out/experiments/algorithms.csv");
-            System.out.println("- out/experiments/README.md");
-
+            switch (expChoice) {
+                case 1:
+                    runExperiment1();
+                    break;
+                case 2:
+                    runExperiment2();
+                    break;
+                case 3:
+                    runExperiment3();
+                    break;
+                case 4:
+                    runExperiment1();
+                    System.out.println();
+                    runExperiment2();
+                    System.out.println();
+                    runExperiment3();
+                    break;
+                case 5:
+                    return;
+            }
         } catch (IOException e) {
-            System.err.println("Error running experiments: " + e.getMessage());
+            System.err.println("Error running experiment: " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
         }
+    }
+    
+    /**
+     * Runs Experiment 1: Neighbor Iteration Performance
+     */
+    private static void runExperiment1() throws IOException {
+        System.out.println("\n=== Running Experiment 1: Neighbor Iteration Performance ===");
+        String csvPath = "data/cleaned_flights.csv";
+        String outputDir = "out/experiments/experiment1_neighbor_iteration";
+        
+        src.experiments.NeighborIterationExperiment experiment = 
+            new src.experiments.NeighborIterationExperiment();
+        experiment.runExperiment(csvPath, outputDir);
+        
+        System.out.println("\n✅ Experiment 1 completed!");
+        System.out.println("Results written to: " + outputDir);
+    }
+    
+    /**
+     * Runs Experiment 2: Scalability Analysis
+     */
+    private static void runExperiment2() throws IOException {
+        System.out.println("\n=== Running Experiment 2: Scalability Analysis ===");
+        String csvPath = "data/cleaned_flights.csv";
+        String outputDir = "out/experiments/experiment2_scalability";
+        
+        src.experiments.ScalabilityExperiment experiment = 
+            new src.experiments.ScalabilityExperiment();
+        experiment.runExperiment(csvPath, outputDir);
+        
+        System.out.println("\n✅ Experiment 2 completed!");
+        System.out.println("Results written to: " + outputDir);
+    }
+    
+    /**
+     * Runs Experiment 3: Pathfinding Performance Benchmark
+     */
+    private static void runExperiment3() throws IOException {
+        System.out.println("\n=== Running Experiment 3: Pathfinding Performance Benchmark ===");
+        String csvPath = "data/cleaned_flights.csv";
+        
+        int numQueries = getIntInput("Number of test queries (default 100): ");
+        if (numQueries <= 0) {
+            numQueries = 100;
+        }
+        
+        String outputDir = "out/experiments/experiment3_pathfinding_benchmark";
+        
+        src.experiments.PathfindingBenchmarkExperiment experiment = 
+            new src.experiments.PathfindingBenchmarkExperiment();
+        experiment.runBenchmark(csvPath, numQueries, outputDir);
+        
+        System.out.println("\n✅ Experiment 3 completed!");
+        System.out.println("Results written to: " + outputDir);
     }
 
     /**

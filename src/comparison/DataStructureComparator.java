@@ -10,7 +10,6 @@ import src.graph.OffsetArrayGraph;
 import src.graph.RoutePartitionedTrieGraph;
 import src.graph.CSRGraph;
 import src.algo.Dijkstra;
-import src.algo.AStar;
 import src.algo.PathResult;
 import src.algo.Constraints;
 import src.util.Stopwatch;
@@ -100,12 +99,11 @@ public class DataStructureComparator {
     
     /**
      * Compares different pathfinding algorithms
+     * @deprecated AStar removed - only Dijkstra is now supported
      */
+    @Deprecated
     public AlgorithmComparisonResult compareAlgorithms(Graph graph, List<String> testQueries) {
         Dijkstra dijkstra = new Dijkstra();
-        AStar aStarZero = new AStar();
-        AStar aStarHop = new AStar();
-
         List<AlgorithmResult> results = new ArrayList<>();
 
         for (String query : testQueries) {
@@ -119,19 +117,9 @@ public class DataStructureComparator {
             if (!graph.hasNode(origin) || !graph.hasNode(destination))
                 continue;
 
-            // Test Dijkstra
+            // Test Dijkstra only
             PathResult dijkstraResult = dijkstra.findPath(graph, origin, destination);
             results.add(new AlgorithmResult("Dijkstra", origin, destination, dijkstraResult));
-
-            // Test A* Zero
-            PathResult aStarZeroResult = aStarZero.findPath(graph, origin, destination,
-                    new AStar.ZeroHeuristic(), new Constraints());
-            results.add(new AlgorithmResult("A* Zero", origin, destination, aStarZeroResult));
-
-            // Test A* Hop
-            PathResult aStarHopResult = aStarHop.findPath(graph, origin, destination,
-                    new AStar.HopHeuristic(), new Constraints());
-            results.add(new AlgorithmResult("A* Hop", origin, destination, aStarHopResult));
         }
 
         return new AlgorithmComparisonResult(results);
