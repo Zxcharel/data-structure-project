@@ -6,20 +6,20 @@ package src.data;
  */
 public class FlightRecord {
     private final String airline;
-    private final String originCountry;
-    private final String destinationCountry;
+    private final String originCode;
+    private final String destinationCode;
     private final int overallRating;
     private final int valueForMoney;
     private final int inflightEntertainment;
     private final int cabinStaff;
     private final int seatComfort;
     
-    public FlightRecord(String airline, String originCountry, String destinationCountry,
+    public FlightRecord(String airline, String originCode, String destinationCode,
                        int overallRating, int valueForMoney, int inflightEntertainment,
                        int cabinStaff, int seatComfort) {
         this.airline = airline;
-        this.originCountry = originCountry;
-        this.destinationCountry = destinationCountry;
+        this.originCode = originCode;
+        this.destinationCode = destinationCode;
         this.overallRating = overallRating;
         this.valueForMoney = valueForMoney;
         this.inflightEntertainment = inflightEntertainment;
@@ -29,8 +29,8 @@ public class FlightRecord {
     
     // Getters
     public String getAirline() { return airline; }
-    public String getOriginCountry() { return originCountry; }
-    public String getDestinationCountry() { return destinationCountry; }
+    public String getOriginCode() { return originCode; }
+    public String getDestinationCode() { return destinationCode; }
     public int getOverallRating() { return overallRating; }
     public int getValueForMoney() { return valueForMoney; }
     public int getInflightEntertainment() { return inflightEntertainment; }
@@ -41,13 +41,13 @@ public class FlightRecord {
      * Creates a key for grouping records by (origin, destination, airline)
      */
     public String getRouteKey() {
-        return originCountry + "|" + destinationCountry + "|" + airline;
+        return originCode + "|" + destinationCode + "|" + airline;
     }
     
     @Override
     public String toString() {
         return String.format("FlightRecord{airline=%s, route=%s->%s, ratings=[%d,%d,%d,%d,%d]}",
-                airline, originCountry, destinationCountry,
+                airline, originCode, destinationCode,
                 overallRating, valueForMoney, inflightEntertainment, cabinStaff, seatComfort);
     }
 }

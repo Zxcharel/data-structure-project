@@ -5,8 +5,8 @@ package src.data;
  * Computes average ratings and provides methods for weight calculation.
  */
 public class RouteAggregate {
-    private final String originCountry;
-    private final String destinationCountry;
+    private final String originCode;
+    private final String destinationCode;
     private final String airline;
     
     // Running totals for averaging
@@ -24,9 +24,9 @@ public class RouteAggregate {
     private int cabinStaffMissing = 0;
     private int seatComfortMissing = 0;
     
-    public RouteAggregate(String originCountry, String destinationCountry, String airline) {
-        this.originCountry = originCountry;
-        this.destinationCountry = destinationCountry;
+    public RouteAggregate(String originCode, String destinationCode, String airline) {
+        this.originCode = originCode;
+        this.destinationCode = destinationCode;
         this.airline = airline;
     }
     
@@ -158,15 +158,15 @@ public class RouteAggregate {
     }
     
     // Getters
-    public String getOriginCountry() { return originCountry; }
-    public String getDestinationCountry() { return destinationCountry; }
+    public String getOriginCode() { return originCode; }
+    public String getDestinationCode() { return destinationCode; }
     public String getAirline() { return airline; }
     public int getCount() { return count; }
     
     @Override
     public String toString() {
         return String.format("RouteAggregate{route=%s->%s, airline=%s, count=%d, avgRatings=[%d,%d,%d,%d,%d], weight=%.3f}",
-                originCountry, destinationCountry, airline, count,
+                originCode, destinationCode, airline, count,
                 getAverageOverallRating(), getAverageValueForMoney(), getAverageInflightEntertainment(),
                 getAverageCabinStaff(), getAverageSeatComfort(), calculateWeight());
     }

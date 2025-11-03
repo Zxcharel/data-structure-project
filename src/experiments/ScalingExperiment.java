@@ -1,6 +1,7 @@
 package src.experiments;
 
 import src.algo.*;
+import src.data.CsvReader;
 import src.graph.*;
 import src.util.IOUtils;
 import src.util.Stopwatch;
@@ -16,22 +17,22 @@ import java.util.*;
 public class ScalingExperiment {
     
     /**
-     * Runs the scaling experiment comparing graph implementations using only CSV graph data
+     * Runs the scaling experiment comparing graph implementations using CSV data
      * 
+     * @param csvPath Path to CSV file
      * @param outputDir Directory to write results
-     * @param realGraph Real graph loaded from CSV file (required)
      * @throws IOException if files cannot be written
-     * @throws IllegalArgumentException if graph is null or empty
      */
-    public void run(String outputDir, Graph realGraph) throws IOException {
-        System.out.println("=== Experiment 3: The Graph Size Deception ===");
-        System.out.println("Testing scalability of graph implementations using CSV data...\n");
+    public void run(String csvPath, String outputDir) throws IOException {
+        System.out.println("=== Experiment 4: The Graph Size Deception ===");
+        System.out.println("Reading graph from CSV: " + csvPath + "\n");
         
-        // Validate graph is provided
+        // Load graph from CSV
+        CsvReader reader = new CsvReader();
+        Graph realGraph = reader.readCsvAndBuildGraph(csvPath);
+        
         if (realGraph == null || realGraph.nodeCount() == 0 || realGraph.edgeCount() == 0) {
-            throw new IllegalArgumentException(
-                "Graph must be loaded from CSV file first. Please use menu option 1 to load a graph."
-            );
+            throw new IllegalArgumentException("Graph loaded from CSV is empty");
         }
         
         // Prepare output directory
@@ -51,40 +52,42 @@ public class ScalingExperiment {
         List<String> allNodes = new ArrayList<>(realGraph.nodes());
         List<TestEdge> allEdges = extractEdgesFromGraph(realGraph, allNodes);
         
+        System.out.println("Full graph: " + allNodes.size() + " nodes, " + allEdges.size() + " edges");
+        
         // Create subsets to show inverse effect at different scales
+        // Use ALL nodes for all test cases, but vary edge count
         // Small: ~25% of edges, Medium: ~50% of edges, Large: ~75% of edges, Full: 100%
         int totalEdges = allEdges.size();
         int smallSize = Math.max(100, totalEdges / 4);      // ~25% or at least 100 edges
         int mediumSize = Math.max(500, totalEdges / 2);     // ~50% or at least 500 edges
         int largeSize = Math.max(1000, (totalEdges * 3) / 4); // ~75% or at least 1000 edges
         
+        // Shuffle edges to ensure random sampling (but use fixed seed for reproducibility)
+        List<TestEdge> shuffledEdges = new ArrayList<>(allEdges);
+        Collections.shuffle(shuffledEdges, new Random(42));
+        
         // Define test cases with different graph sizes
         TestCase[] testCases = {
-            new TestCase("Small Subset", smallSize, allEdges),
-            new TestCase("Medium Subset", mediumSize, allEdges),
-            new TestCase("Large Subset", largeSize, allEdges),
-            new TestCase("Full Dataset", totalEdges, allEdges)
+            new TestCase("Small Subset", smallSize, shuffledEdges),
+            new TestCase("Medium Subset", mediumSize, shuffledEdges),
+            new TestCase("Large Subset", largeSize, shuffledEdges),
+            new TestCase("Full Dataset", totalEdges, allEdges)  // Full uses all edges in original order
         };
         
         ScalingResult baseline = null;
         
         // Test each graph size
         for (TestCase testCase : testCases) {
-            System.out.printf("\n--- Testing %s Graph (~%d edges) ---\n", 
-                            testCase.name, testCase.edgeCount);
+            System.out.printf("\n--- Testing %s Graph (%d nodes, ~%d edges) ---\n", 
+                            testCase.name, allNodes.size(), testCase.edgeCount);
             
-            // Get subset of edges for this test case
+            // Get subset of edges for this test case (randomly sampled)
             List<TestEdge> subsetEdges = new ArrayList<>(
-                allEdges.subList(0, Math.min(testCase.edgeCount, allEdges.size()))
+                testCase.sourceEdges.subList(0, Math.min(testCase.edgeCount, testCase.sourceEdges.size()))
             );
             
-            // Get unique nodes from this edge subset
-            Set<String> nodeSet = new HashSet<>();
-            for (TestEdge edge : subsetEdges) {
-                nodeSet.add(edge.from);
-                nodeSet.add(edge.to);
-            }
-            List<String> subsetNodes = new ArrayList<>(nodeSet);
+            // Use ALL nodes for all test cases to ensure we test with all 1000 nodes
+            List<String> subsetNodes = new ArrayList<>(allNodes);
             
             // Test each implementation on this subset
             ScalingResult[] results = new ScalingResult[4];

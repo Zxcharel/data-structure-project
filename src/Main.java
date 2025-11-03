@@ -16,7 +16,11 @@ import src.graph.DynamicArrayGraph;
 import src.graph.OffsetArrayGraph;
 import src.graph.RoutePartitionedTrieGraph;
 import src.algo.*;
-import src.experiments.ExperimentRunner;
+import src.experiments.PathfindingBenchmarkExperiment;
+import src.experiments.CacheLocalityExperiment;
+import src.experiments.NeighborIterationExperiment;
+import src.experiments.ScalingExperiment;
+import src.experiments.PrefixAutocompleteExperiment;
 import src.analysis.GraphAnalyzer;
 import src.analysis.CentralityMetrics;
 import src.comparison.DataStructureComparator;
@@ -58,23 +62,11 @@ public class Main {
                     performGraphAnalysis();
                     break;
                 case 5:
-                    performDataStructureComparison();
-                    break;
-                case 6:
                     generateAnalysisReport();
                     break;
-                case 7:
+                case 6:
                     System.out.println("Goodbye!");
                     return;
-                case 8:
-                    runSortedVsUnsortedExperiment();
-                    break;
-                case 9:
-                    runCSRvsAdjacencyExperiment();
-                    break;
-                case 10:
-                    runPrefixAutocompleteExperimentMenu();
-                    break;
                 default:
                     System.out.println("Invalid choice. Please try again.");
             }
@@ -90,14 +82,10 @@ public class Main {
         System.out.println("Main Menu:");
         System.out.println("1. Build graph from CSV");
         System.out.println("2. Query best route");
-        System.out.println("3. Run experiments");
+        System.out.println("3. Run experiments (5 experiments available)");
         System.out.println("4. Graph analysis");
-        System.out.println("5. Data structure comparison");
-        System.out.println("6. Generate analysis report");
-        System.out.println("7. Exit");
-        System.out.println("8. Experiment: Sorted vs Unsorted Edges");
-        System.out.println("9. Experiment: CSR vs Adjacency Lists");
-        System.out.println("10. Experiment: Prefix Autocomplete (RouteTrie vs others)");
+        System.out.println("5. Generate analysis report");
+        System.out.println("6. Exit");
         System.out.println();
     }
 
@@ -233,41 +221,13 @@ public class Main {
             return;
         }
 
-        // Algorithm selection
-        System.out.println("Select algorithm:");
-        System.out.println("1. Dijkstra (default)");
-        System.out.println("2. A* (Zero heuristic)");
-        System.out.println("3. A* (Hop heuristic)");
-
-        int algoChoice = getIntInput("Enter algorithm choice (1-3): ");
-        if (algoChoice < 1 || algoChoice > 3) {
-            algoChoice = 1; // Default to Dijkstra
-        }
-
         // Optional constraints
         Constraints constraints = getConstraints();
 
-        // Run the selected algorithm
-        PathResult result = null;
-        String algorithmName = "";
-
-        switch (algoChoice) {
-            case 1:
-                Dijkstra dijkstra = new Dijkstra();
-                result = dijkstra.findPath(graph, origin, destination, constraints);
-                algorithmName = "Dijkstra";
-                break;
-            case 2:
-                AStar aStarZero = new AStar();
-                result = aStarZero.findPath(graph, origin, destination, new AStar.ZeroHeuristic(), constraints);
-                algorithmName = "A* (Zero heuristic)";
-                break;
-            case 3:
-                AStar aStarHop = new AStar();
-                result = aStarHop.findPath(graph, origin, destination, new AStar.HopHeuristic(), constraints);
-                algorithmName = "A* (Hop heuristic)";
-                break;
-        }
+        // Run Dijkstra's algorithm
+        Dijkstra dijkstra = new Dijkstra();
+        PathResult result = dijkstra.findPath(graph, origin, destination, constraints);
+        String algorithmName = "Dijkstra";
 
         // Display results
         System.out.println("\n=== Results ===");
@@ -285,66 +245,169 @@ public class Main {
      * Menu option 3: Run experiments
      */
     private static void runExperiments() {
-        System.out.println("=== Run Experiments ===");
-        System.out.println("Select experiment type:");
-        System.out.println("1. Algorithm comparison (requires loaded graph)");
-        System.out.println("2. Graph scaling experiment (generates own test data)");
+        System.out.println("=== Experiments: Graph Structure Comparison ===");
+        System.out.println("Select an experiment to run:");
+        System.out.println("1. Experiment 1: Pathfinding Performance Benchmark");
+        System.out.println("2. Experiment 2: Cache Locality (CSR vs Adjacency Lists)");
+        System.out.println("3. Experiment 3: Neighbor Iteration Performance");
+        System.out.println("4. Experiment 4: The Graph Size Deception (Scaling)");
+        System.out.println("5. Experiment 5: Prefix Autocomplete (Trie vs Arrays)");
+        System.out.println("6. Run all experiments");
+        System.out.println("7. Back to main menu");
+
+        int expChoice = getIntInput("\nEnter choice (1-7): ");
+        if (expChoice < 1 || expChoice > 7) {
+            System.out.println("Invalid choice.");
+            return;
+        }
+
+        String csvPath = "data/cleaned_flights.csv";
         
-        int expChoice = getIntInput("Enter choice (1-2): ");
-        if (expChoice < 1 || expChoice > 2) {
-            expChoice = 1;
+        try {
+            switch (expChoice) {
+                case 1:
+                    runExperiment1();
+                    break;
+                case 2:
+                    runExperiment2();
+                    break;
+                case 3:
+                    runExperiment3();
+                    break;
+                case 4:
+                    runExperiment4();
+                    break;
+                case 5:
+                    runExperiment5();
+                    break;
+                case 6:
+                    System.out.println("\n=== Running All Experiments ===\n");
+                    runExperiment1();
+                    System.out.println("\n");
+                    runExperiment2();
+                    System.out.println("\n");
+                    runExperiment3();
+                    System.out.println("\n");
+                    runExperiment4();
+                    System.out.println("\n");
+                    runExperiment5();
+                    System.out.println("\n=== All Experiments Completed ===");
+                    break;
+                case 7:
+                    return;
+            }
+        } catch (IOException e) {
+            System.err.println("Error running experiment: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Runs Experiment 1: Pathfinding Performance Benchmark
+     */
+    private static void runExperiment1() throws IOException {
+        System.out.println("\n=== Running Experiment 1: Pathfinding Performance Benchmark ===");
+        String csvPath = "data/cleaned_flights.csv";
+        
+        int numQueries = getIntInput("Number of test queries (default 100): ");
+        if (numQueries <= 0) {
+            numQueries = 100;
         }
         
-        if (expChoice == 1) {
-            // Original algorithm comparison experiment
-            if (graph == null) {
-                System.out.println("Error: No graph loaded. Please build graph from CSV first.");
-                return;
-            }
-
-            int numQueries = getIntInput("Number of random queries (default 50): ");
-            if (numQueries <= 0) {
-                numQueries = 50;
-            }
-
-            try {
-                ExperimentRunner runner = new ExperimentRunner(graph);
-                runner.runExperiments(numQueries, "out/experiments");
-
-                System.out.println("Experiments completed successfully!");
-                System.out.println("Results written to:");
-                System.out.println("- out/experiments/algorithms.csv");
-                System.out.println("- out/experiments/README.md");
-
-            } catch (IOException e) {
-                System.err.println("Error running experiments: " + e.getMessage());
-            } catch (Exception e) {
-                System.err.println("Error: " + e.getMessage());
-            }
-        } else {
-            // Scaling experiment
-            if (graph == null || graph.nodeCount() == 0) {
-                System.err.println("Error: No graph loaded. Please load a graph from CSV first (menu option 1).");
-                return;
-            }
-            
-            try {
-                ExperimentRunner runner = new ExperimentRunner(graph); // Pass graph if loaded
-                runner.runScalingExperiment("out/scaling_experiment");
-
-                System.out.println("Scaling experiment completed successfully!");
-                System.out.println("Results written to:");
-                System.out.println("- out/scaling_experiment/scaling_results.csv");
-                System.out.println("- out/scaling_experiment/scaling_analysis.md");
-
-            } catch (IllegalArgumentException e) {
-                System.err.println("Error: " + e.getMessage());
-            } catch (IOException e) {
-                System.err.println("Error running scaling experiment: " + e.getMessage());
-            } catch (Exception e) {
-                System.err.println("Error: " + e.getMessage());
-            }
+        String outputDir = "out/experiments/experiment1_pathfinding_benchmark";
+        
+        PathfindingBenchmarkExperiment experiment = 
+            new PathfindingBenchmarkExperiment();
+        experiment.runBenchmark(csvPath, numQueries, outputDir);
+        
+        System.out.println("\n✅ Experiment 1 completed!");
+        System.out.println("Results written to: " + outputDir);
+    }
+    
+    /**
+     * Runs Experiment 2: Cache Locality (CSR vs Adjacency Lists)
+     */
+    private static void runExperiment2() throws IOException {
+        System.out.println("\n=== Running Experiment 2: Cache Locality (CSR vs Adjacency Lists) ===");
+        String csvPath = "data/cleaned_flights.csv";
+        
+        int numQueries = getIntInput("Number of test queries (default 100): ");
+        if (numQueries <= 0) {
+            numQueries = 100;
         }
+        
+        String outputDir = "out/experiments/experiment2_cache_locality";
+        
+        CacheLocalityExperiment experiment = 
+            new CacheLocalityExperiment();
+        experiment.runExperiment(csvPath, numQueries, outputDir);
+        
+        System.out.println("\n✅ Experiment 2 completed!");
+        System.out.println("Results written to: " + outputDir);
+    }
+    
+    /**
+     * Runs Experiment 3: Neighbor Iteration Performance
+     */
+    private static void runExperiment3() throws IOException {
+        System.out.println("\n=== Running Experiment 3: Neighbor Iteration Performance ===");
+        String csvPath = "data/cleaned_flights.csv";
+        String outputDir = "out/experiments/experiment3_neighbor_iteration";
+        
+        NeighborIterationExperiment experiment = 
+            new NeighborIterationExperiment();
+        experiment.runExperiment(csvPath, outputDir);
+        
+        System.out.println("\n✅ Experiment 3 completed!");
+        System.out.println("Results written to: " + outputDir);
+    }
+    
+    /**
+     * Runs Experiment 4: The Graph Size Deception (Scaling Experiment)
+     */
+    private static void runExperiment4() throws IOException {
+        System.out.println("\n=== Running Experiment 4: The Graph Size Deception ===");
+        String csvPath = "data/cleaned_flights.csv";
+        String outputDir = "out/experiments/experiment4_scaling";
+        
+        ScalingExperiment experiment = new ScalingExperiment();
+        experiment.run(csvPath, outputDir);
+        
+        System.out.println("\n✅ Experiment 4 completed!");
+        System.out.println("Results written to: " + outputDir);
+    }
+    
+    /**
+     * Runs Experiment 5: Prefix Autocomplete
+     */
+    private static void runExperiment5() throws IOException {
+        System.out.println("\n=== Running Experiment 5: Prefix Autocomplete ===");
+        String csvPath = "data/cleaned_flights.csv";
+        
+        System.out.println("Select graph type for prefix experiment:");
+        System.out.println("1. RoutePartitionedTrieGraph (recommended for this experiment)");
+        System.out.println("2. AdjacencyListGraph (baseline)");
+        System.out.println("3. OffsetArrayGraph (baseline)");
+        System.out.println("4. CSRGraph (baseline)");
+        
+        int graphChoice = getIntInput("Enter choice (1-4, default 1): ");
+        if (graphChoice < 1 || graphChoice > 4) graphChoice = 1;
+        
+        int nPrefixes = getIntInput("Number of prefixes per origin (default 20): ");
+        if (nPrefixes <= 0) {
+            nPrefixes = 20;
+        }
+        
+        String outputDir = "out/experiments/experiment5_prefix_autocomplete";
+        
+        PrefixAutocompleteExperiment experiment = new PrefixAutocompleteExperiment();
+        experiment.runExperiment(csvPath, graphChoice, nPrefixes, outputDir);
+        
+        System.out.println("\n✅ Experiment 5 completed!");
+        System.out.println("Results written to: " + outputDir);
+        System.out.println("Note: For comparison, run this experiment again with a different graph type");
     }
 
     /**
@@ -501,45 +564,9 @@ public class Main {
         }
     }
 
-    /**
-     * Menu option 5: Perform data structure comparison
-     */
-    private static void performDataStructureComparison() {
-        if (graph == null) {
-            System.out.println("Error: No graph loaded. Please build graph from CSV first.");
-            return;
-        }
-
-        System.out.println("=== Data Structure Comparison ===");
-
-        DataStructureComparator comparator = new DataStructureComparator();
-
-        // Use all nodes and all edges for comprehensive comparison
-        List<String> allNodes = new ArrayList<>(graph.nodes());
-        int totalEdges = graph.edgeCount();
-
-        System.out.println("Testing with ALL " + allNodes.size() + " nodes and " + totalEdges + " edges...");
-        System.out.println("This may take a while for large graphs...\n");
-
-        // Graph implementation comparison
-        System.out.println("--- Graph Implementation Comparison ---");
-        GraphComparisonResult graphComparison = comparator.compareGraphImplementations(allNodes, totalEdges);
-        System.out.println(graphComparison.toString());
-
-        // Memory comparison
-        System.out.println("\n--- Memory Usage Comparison ---");
-        MemoryComparisonResult memoryComparison = comparator.compareMemoryUsage(allNodes, totalEdges);
-        System.out.println(memoryComparison.toString());
-
-        // Algorithm comparison (using subset for queries to avoid too many)
-        System.out.println("\n--- Algorithm Performance Comparison ---");
-        List<String> testQueries = generateTestQueries(allNodes, Math.min(20, allNodes.size() / 10));
-        AlgorithmComparisonResult algorithmComparison = comparator.compareAlgorithms(graph, testQueries);
-        System.out.println(algorithmComparison.toString());
-    }
 
     /**
-     * Menu option 6: Generate comprehensive analysis report
+     * Menu option 5: Generate comprehensive analysis report
      */
     private static void generateAnalysisReport() {
         if (graph == null) {
@@ -574,136 +601,4 @@ public class Main {
         }
     }
 
-    /**
-     * Generates test queries for algorithm comparison
-     */
-    private static List<String> generateTestQueries(List<String> nodes, int numQueries) {
-        List<String> queries = new ArrayList<>();
-        Random random = new Random(42);
-
-        for (int i = 0; i < numQueries; i++) {
-            String origin = nodes.get(random.nextInt(nodes.size()));
-            String destination = nodes.get(random.nextInt(nodes.size()));
-
-            if (!origin.equals(destination)) {
-                queries.add(origin + " -> " + destination);
-            }
-        }
-
-        return queries;
-    }
-
-    /**
-     * Menu option 8: Run sorted vs unsorted experiment
-     */
-    private static void runSortedVsUnsortedExperiment() {
-        System.out.println("=== Experiment: Sorted vs Unsorted Edges ===");
-        System.out.println("Tests whether pre-sorting adjacency lists provides performance benefits.");
-        System.out.println();
-
-        String csvPath = getStringInput("Enter CSV path (press Enter for default 'data/cleaned_flights.csv'): ");
-        if (csvPath.trim().isEmpty()) {
-            csvPath = "data/cleaned_flights.csv";
-        }
-
-        int numQueries = getIntInput("Number of random queries (default 50): ");
-        if (numQueries <= 0) {
-            numQueries = 50;
-        }
-
-        String outputDir = getStringInput("Enter output directory (press Enter for 'out/experiments/sorted_vs_unsorted'): ");
-        if (outputDir.trim().isEmpty()) {
-            outputDir = "out/experiments/sorted_vs_unsorted";
-        }
-
-        try {
-            // Create a dummy graph for the ExperimentRunner - it will rebuild its own
-            Graph dummyGraph = new AdjacencyListGraph();
-            ExperimentRunner runner = new ExperimentRunner(dummyGraph);
-            runner.experimentSortedVsUnsorted(csvPath, numQueries, outputDir);
-
-            System.out.println("\nExperiment completed successfully!");
-            System.out.println("Results written to:");
-            System.out.println("- " + outputDir + "/sorted_vs_unsorted.csv");
-            System.out.println("- " + outputDir + "/sorted_vs_unsorted_README.md");
-
-        } catch (IOException e) {
-            System.err.println("Error running experiment: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Menu option 9: Run CSR vs adjacency experiment
-     */
-    private static void runCSRvsAdjacencyExperiment() {
-        System.out.println("=== Experiment: CSR Cache-Friendliness vs Adjacency Lists ===");
-        System.out.println("Tests whether cache-friendly layouts beat pointer overhead.");
-        System.out.println();
-
-        String csvPath = getStringInput("Enter CSV path (press Enter for default 'data/cleaned_flights.csv'): ");
-        if (csvPath.trim().isEmpty()) {
-            csvPath = "data/cleaned_flights.csv";
-        }
-
-        int numQueries = getIntInput("Number of random queries (default 50): ");
-        if (numQueries <= 0) {
-            numQueries = 50;
-        }
-
-        String outputDir = getStringInput("Enter output directory (press Enter for 'out/experiments/csr_vs_adjacency'): ");
-        if (outputDir.trim().isEmpty()) {
-            outputDir = "out/experiments/csr_vs_adjacency";
-        }
-
-        try {
-            // Create a dummy graph for the ExperimentRunner - it will rebuild its own
-            Graph dummyGraph = new AdjacencyListGraph();
-            ExperimentRunner runner = new ExperimentRunner(dummyGraph);
-            runner.experimentCSRvsAdjacency(csvPath, numQueries, outputDir);
-
-            System.out.println("\nExperiment completed successfully!");
-            System.out.println("Results written to:");
-            System.out.println("- " + outputDir + "/csr_vs_adjacency.csv");
-            System.out.println("- " + outputDir + "/csr_vs_adjacency_README.md");
-
-        } catch (IOException e) {
-            System.err.println("Error running experiment: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Menu option 10: Run Prefix Autocomplete experiment
-     */
-    private static void runPrefixAutocompleteExperimentMenu() {
-        if (graph == null) {
-            System.out.println("Error: No graph loaded. Please build graph from CSV first.");
-            return;
-        }
-
-        System.out.println("=== Experiment: Prefix Autocomplete on Outgoing Routes ===");
-        int topK = getIntInput("Top-K origins by out-degree (default 100): ");
-        if (topK <= 0) topK = 100;
-        int prefixesPer = getIntInput("Prefixes per origin (default 20): ");
-        if (prefixesPer <= 0) prefixesPer = 20;
-        String compare = getStringInput("Compare multiple graph types from CSV? (y/N): ").trim().toLowerCase();
-
-        try {
-            if (compare.equals("y") || compare.equals("yes")) {
-                String csvPath = getStringInput("Enter CSV path (press Enter for default 'data/cleaned_flights.csv'): ");
-                if (csvPath.trim().isEmpty()) csvPath = "data/cleaned_flights.csv";
-                ExperimentRunner.runPrefixAutocompleteComparisonConsole(csvPath, topK, prefixesPer);
-            } else {
-                ExperimentRunner runner = new ExperimentRunner(graph);
-                runner.runPrefixAutocompleteExperiment(topK, prefixesPer, "console");
-            }
-        } catch (Exception e) {
-            System.err.println("Error running prefix experiment: " + e.getMessage());
-        }
-    }
 }

@@ -45,8 +45,8 @@ public class CsvReader {
                     if (record != null) {
                         String routeKey = record.getRouteKey();
                         routeMap.computeIfAbsent(routeKey, 
-                            k -> new RouteAggregate(record.getOriginCountry(), 
-                                                  record.getDestinationCountry(), 
+                            k -> new RouteAggregate(record.getOriginCode(), 
+                                                  record.getDestinationCode(), 
                                                   record.getAirline()))
                                .addRecord(record);
                     }
@@ -90,8 +90,8 @@ public class CsvReader {
                     if (record != null) {
                         String routeKey = record.getRouteKey();
                         routeMap.computeIfAbsent(routeKey, 
-                            k -> new RouteAggregate(record.getOriginCountry(), 
-                                                  record.getDestinationCountry(), 
+                            k -> new RouteAggregate(record.getOriginCode(), 
+                                                  record.getDestinationCode(), 
                                                   record.getAirline()))
                                .addRecord(record);
                     }
@@ -130,8 +130,8 @@ public class CsvReader {
                     if (record != null) {
                         String routeKey = record.getRouteKey();
                         routeMap.computeIfAbsent(routeKey, 
-                            k -> new RouteAggregate(record.getOriginCountry(), 
-                                                  record.getDestinationCountry(), 
+                            k -> new RouteAggregate(record.getOriginCode(), 
+                                                  record.getDestinationCode(), 
                                                   record.getAirline()))
                                .addRecord(record);
                     }
@@ -164,9 +164,11 @@ public class CsvReader {
             
             if (header.contains("airline")) {
                 indices.airlineIndex = i;
-            } else if (header.contains("origin") && !header.contains("code")) {
+            } else if (header.contains("origin") && header.contains("code")) {
+                // ONLY use "origin code" column
                 indices.originIndex = i;
-            } else if (header.contains("destination") && !header.contains("code")) {
+            } else if (header.contains("destination") && header.contains("code")) {
+                // ONLY use "destination code" column
                 indices.destinationIndex = i;
             } else if (header.contains("overall") && header.contains("rating")) {
                 indices.overallRatingIndex = i;
@@ -186,10 +188,10 @@ public class CsvReader {
             throw new IllegalArgumentException("Required column 'airline' not found");
         }
         if (indices.originIndex == -1) {
-            throw new IllegalArgumentException("Required column 'origin' not found");
+            throw new IllegalArgumentException("Required column 'origin code' not found");
         }
         if (indices.destinationIndex == -1) {
-            throw new IllegalArgumentException("Required column 'destination' not found");
+            throw new IllegalArgumentException("Required column 'destination code' not found");
         }
         
         return indices;
@@ -262,12 +264,12 @@ public class CsvReader {
     private void buildIntoGraphFromRoutes(Map<String, RouteAggregate> routeMap, Graph targetGraph) {
         for (RouteAggregate aggregate : routeMap.values()) {
             // Add nodes
-            targetGraph.addNode(aggregate.getOriginCountry());
-            targetGraph.addNode(aggregate.getDestinationCountry());
+            targetGraph.addNode(aggregate.getOriginCode());
+            targetGraph.addNode(aggregate.getDestinationCode());
             
             // Add edge with calculated weight
             Edge edge = new Edge(
-                aggregate.getDestinationCountry(),
+                aggregate.getDestinationCode(),
                 aggregate.getAirline(),
                 aggregate.getAverageOverallRating(),
                 aggregate.getAverageValueForMoney(),
@@ -277,7 +279,7 @@ public class CsvReader {
                 aggregate.calculateWeight()
             );
             
-            targetGraph.addEdge(aggregate.getOriginCountry(), edge);
+            targetGraph.addEdge(aggregate.getOriginCode(), edge);
         }
     }
     
