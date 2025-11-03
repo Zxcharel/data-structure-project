@@ -148,6 +148,78 @@ public class RoutePartitionedTrieGraph implements Graph {
     }
 
     /**
+     * Returns all outgoing edges from 'origin' whose destination starts with the given prefix.
+     * If prefix is empty/null, returns neighbors(origin).
+     */
+    public List<Edge> neighborsByPrefix(String origin, String prefix) {
+        TrieNode root = originToTrieRoot.get(origin);
+        if (root == null) {
+            return new ArrayList<>();
+        }
+        if (prefix == null || prefix.isEmpty()) {
+            return neighbors(origin);
+        }
+        TrieNode current = root;
+        for (int i = 0; i < prefix.length(); i++) {
+            char c = prefix.charAt(i);
+            TrieNode next = current.children.get(c);
+            if (next == null) {
+                return new ArrayList<>();
+            }
+            current = next;
+        }
+        List<Edge> result = new ArrayList<>();
+        Deque<TrieNode> stack = new ArrayDeque<>();
+        stack.push(current);
+        while (!stack.isEmpty()) {
+            TrieNode node = stack.pop();
+            if (node.terminalEdges != null) {
+                result.addAll(node.terminalEdges);
+            }
+            for (TrieNode child : node.children.values()) {
+                stack.push(child);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Counts outgoing edges from 'origin' whose destination starts with the given prefix.
+     * This avoids allocating lists for performance-sensitive benchmarking.
+     */
+    public int countNeighborsByPrefix(String origin, String prefix) {
+        TrieNode root = originToTrieRoot.get(origin);
+        if (root == null) {
+            return 0;
+        }
+        if (prefix == null || prefix.isEmpty()) {
+            return root.allOutgoingEdges != null ? root.allOutgoingEdges.size() : 0;
+        }
+        TrieNode current = root;
+        for (int i = 0; i < prefix.length(); i++) {
+            char c = prefix.charAt(i);
+            TrieNode next = current.children.get(c);
+            if (next == null) {
+                return 0;
+            }
+            current = next;
+        }
+        int count = 0;
+        Deque<TrieNode> stack = new ArrayDeque<>();
+        stack.push(current);
+        while (!stack.isEmpty()) {
+            TrieNode node = stack.pop();
+            if (node.terminalEdges != null) {
+                count += node.terminalEdges.size();
+            }
+            for (TrieNode child : node.children.values()) {
+                stack.push(child);
+            }
+        }
+        return count;
+    }
+
+    /**
      * Estimates memory usage by traversing all tries.
      * This is a rough estimate consistent with other implementations.
      */

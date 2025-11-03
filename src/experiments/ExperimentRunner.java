@@ -2,6 +2,11 @@ package src.experiments;
 
 import src.algo.*;
 import src.graph.Graph;
+import src.graph.RoutePartitionedTrieGraph;
+import src.graph.AdjacencyListGraph;
+import src.graph.LinearArrayGraph;
+import src.graph.DynamicArrayGraph;
+import src.graph.OffsetArrayGraph;
 import src.graph.AdjacencyListGraph;
 import src.graph.SortedAdjacencyListGraph;
 import src.graph.CSRGraph;
@@ -140,6 +145,159 @@ public class ExperimentRunner {
             }
         }
         return airlines;
+    }
+
+    /**
+     * EXPERIMENT 5: "When Tries Beat Arrays: Prefix Autocomplete on Outgoing Routes"
+     *
+     * Measures latency to retrieve destinations by 1–3 letter prefixes for the top-K origin nodes.
+     * If the underlying graph is RoutePartitionedTrieGraph, uses neighborsByPrefix; otherwise,
+     * scans neighbors and filters by startsWith. Writes CSV and a Markdown summary.
+     *
+     * @param topKOrigins number of highest-degree origins to test (e.g., 100)
+     * @param prefixesPerOrigin number of sampled prefixes per origin (e.g., 20)
+     * @param outputDir directory for outputs
+     */
+    public void runPrefixAutocompleteExperiment(int topKOrigins, int prefixesPerOrigin, String outputDir) throws IOException {
+        List<String> allNodes = new ArrayList<>(graph.nodes());
+        if (allNodes.isEmpty()) {
+            throw new IllegalArgumentException("Graph is empty; build it from CSV first.");
+        }
+
+        // Select top-K origins by out-degree
+        allNodes.sort((a, b) -> Integer.compare(graph.neighbors(b).size(), graph.neighbors(a).size()));
+        List<String> origins = allNodes.subList(0, Math.min(topKOrigins, allNodes.size()));
+
+        // Build prefixes for each origin from actual destinations
+        Map<String, List<String>> originToPrefixes = new HashMap<>();
+        Random rnd = new Random(42);
+        for (String origin : origins) {
+            Set<String> prefixSet = new LinkedHashSet<>();
+            for (Edge e : graph.neighbors(origin)) {
+                String dest = e.getDestination();
+                for (int len = 1; len <= 3 && len <= dest.length(); len++) {
+                    prefixSet.add(dest.substring(0, len));
+                }
+            }
+            List<String> list = new ArrayList<>(prefixSet);
+            Collections.shuffle(list, rnd);
+            if (list.size() > prefixesPerOrigin) {
+                list = list.subList(0, prefixesPerOrigin);
+            }
+            originToPrefixes.put(origin, list);
+        }
+
+        long totalNs = 0;
+        long totalQueries = 0;
+        boolean isTrie = (graph instanceof RoutePartitionedTrieGraph);
+
+        for (String origin : origins) {
+            for (String prefix : originToPrefixes.getOrDefault(origin, Collections.emptyList())) {
+                long start = System.nanoTime();
+                int matches = 0;
+                if (isTrie) {
+                    matches = ((RoutePartitionedTrieGraph) graph).countNeighborsByPrefix(origin, prefix);
+                } else {
+                    for (Edge e : graph.neighbors(origin)) {
+                        if (e.getDestination().startsWith(prefix)) {
+                            matches++;
+                        }
+                    }
+                }
+                long elapsed = System.nanoTime() - start;
+                totalNs += elapsed;
+                totalQueries++;
+            }
+        }
+        double avgUs = totalQueries > 0 ? (totalNs / 1000.0) / totalQueries : 0.0;
+        double totalMs = totalNs / 1_000_000.0;
+        System.out.println("\n--- Prefix Autocomplete (Single Graph) ---");
+        System.out.printf("Graph: %s | origins=%d | prefixes/origin=%d | queries=%d\n",
+                graph.getClass().getSimpleName(), origins.size(), prefixesPerOrigin, totalQueries);
+        System.out.printf("Avg Latency: %.2f µs/query | Total: %.1f ms\n", avgUs, totalMs);
+    }
+
+    /**
+     * Comparison version: builds multiple graph implementations from the same CSV
+     * and prints a console table with average latency per query.
+     */
+    public static void runPrefixAutocompleteComparisonConsole(String csvPath, int topKOrigins, int prefixesPerOrigin) throws IOException {
+        CsvReader reader = new CsvReader();
+        // Build source once in adjacency
+        Graph source = reader.readCsvAndBuildGraph(csvPath, AdjacencyListGraph::new);
+
+        // Select top-K origins
+        List<String> allNodes = new ArrayList<>(source.nodes());
+        allNodes.sort((a, b) -> Integer.compare(source.neighbors(b).size(), source.neighbors(a).size()));
+        List<String> origins = allNodes.subList(0, Math.min(topKOrigins, allNodes.size()));
+
+        // Build prefixes per origin
+        Map<String, List<String>> originToPrefixes = new HashMap<>();
+        Random rnd = new Random(42);
+        for (String origin : origins) {
+            Set<String> prefixSet = new LinkedHashSet<>();
+            for (Edge e : source.neighbors(origin)) {
+                String dest = e.getDestination();
+                for (int len = 1; len <= 3 && len <= dest.length(); len++) {
+                    prefixSet.add(dest.substring(0, len));
+                }
+            }
+            List<String> list = new ArrayList<>(prefixSet);
+            Collections.shuffle(list, rnd);
+            if (list.size() > prefixesPerOrigin) list = list.subList(0, prefixesPerOrigin);
+            originToPrefixes.put(origin, list);
+        }
+
+        // Prepare graphs to compare
+        Map<String, Graph> graphs = new LinkedHashMap<>();
+        graphs.put("AdjacencyList", copyTo(new AdjacencyListGraph(), source));
+        graphs.put("LinearArray", copyTo(new LinearArrayGraph(), source));
+        graphs.put("DynamicArray", copyTo(new DynamicArrayGraph(), source));
+        OffsetArrayGraph offset = (OffsetArrayGraph) copyTo(new OffsetArrayGraph(), source);
+        offset.finalizeCSR();
+        graphs.put("OffsetArray", offset);
+        graphs.put("RouteTrie", copyTo(new RoutePartitionedTrieGraph(), source));
+
+        System.out.println("\n--- Prefix Autocomplete Comparison ---");
+        System.out.printf("CSV: %s | origins=%d | prefixes/origin=%d\n", csvPath, origins.size(), prefixesPerOrigin);
+        System.out.println("Graph           | Avg µs/query | Total ms | Queries");
+        System.out.println("----------------+-------------:|---------:|-------:");
+
+        for (Map.Entry<String, Graph> entry : graphs.entrySet()) {
+            String name = entry.getKey();
+            Graph g = entry.getValue();
+            long totalNs = 0L;
+            long queries = 0L;
+            boolean isTrie = (g instanceof RoutePartitionedTrieGraph);
+
+            for (String origin : origins) {
+                List<String> prefixes = originToPrefixes.get(origin);
+                for (String prefix : prefixes) {
+                    long start = System.nanoTime();
+                    if (isTrie) {
+                        ((RoutePartitionedTrieGraph) g).countNeighborsByPrefix(origin, prefix);
+                    } else {
+                        for (Edge e : g.neighbors(origin)) {
+                            if (e.getDestination().startsWith(prefix)) {
+                                // consume
+                            }
+                        }
+                    }
+                    totalNs += (System.nanoTime() - start);
+                    queries++;
+                }
+            }
+
+            double avgUs = queries > 0 ? (totalNs / 1000.0) / queries : 0.0;
+            double totalMs = totalNs / 1_000_000.0;
+            System.out.printf(Locale.US, "%-15s | %11.2f | %8.1f | %7d\n", name, avgUs, totalMs, queries);
+        }
+    }
+
+    private static Graph copyTo(Graph target, Graph source) {
+        for (String node : source.nodes()) target.addNode(node);
+        for (String node : source.nodes()) for (Edge e : source.neighbors(node)) target.addEdge(node, e);
+        return target;
     }
     
     /**

@@ -72,6 +72,9 @@ public class Main {
                 case 9:
                     runCSRvsAdjacencyExperiment();
                     break;
+                case 10:
+                    runPrefixAutocompleteExperimentMenu();
+                    break;
                 default:
                     System.out.println("Invalid choice. Please try again.");
             }
@@ -91,9 +94,10 @@ public class Main {
         System.out.println("4. Graph analysis");
         System.out.println("5. Data structure comparison");
         System.out.println("6. Generate analysis report");
+        System.out.println("7. Exit");
         System.out.println("8. Experiment: Sorted vs Unsorted Edges");
         System.out.println("9. Experiment: CSR vs Adjacency Lists");
-        System.out.println("7. Exit");
+        System.out.println("10. Experiment: Prefix Autocomplete (RouteTrie vs others)");
         System.out.println();
     }
 
@@ -670,6 +674,36 @@ public class Main {
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Menu option 10: Run Prefix Autocomplete experiment
+     */
+    private static void runPrefixAutocompleteExperimentMenu() {
+        if (graph == null) {
+            System.out.println("Error: No graph loaded. Please build graph from CSV first.");
+            return;
+        }
+
+        System.out.println("=== Experiment: Prefix Autocomplete on Outgoing Routes ===");
+        int topK = getIntInput("Top-K origins by out-degree (default 100): ");
+        if (topK <= 0) topK = 100;
+        int prefixesPer = getIntInput("Prefixes per origin (default 20): ");
+        if (prefixesPer <= 0) prefixesPer = 20;
+        String compare = getStringInput("Compare multiple graph types from CSV? (y/N): ").trim().toLowerCase();
+
+        try {
+            if (compare.equals("y") || compare.equals("yes")) {
+                String csvPath = getStringInput("Enter CSV path (press Enter for default 'data/cleaned_flights.csv'): ");
+                if (csvPath.trim().isEmpty()) csvPath = "data/cleaned_flights.csv";
+                ExperimentRunner.runPrefixAutocompleteComparisonConsole(csvPath, topK, prefixesPer);
+            } else {
+                ExperimentRunner runner = new ExperimentRunner(graph);
+                runner.runPrefixAutocompleteExperiment(topK, prefixesPer, "console");
+            }
+        } catch (Exception e) {
+            System.err.println("Error running prefix experiment: " + e.getMessage());
         }
     }
 }
