@@ -66,6 +66,12 @@ public class Main {
                 case 7:
                     System.out.println("Goodbye!");
                     return;
+                case 8:
+                    runSortedVsUnsortedExperiment();
+                    break;
+                case 9:
+                    runCSRvsAdjacencyExperiment();
+                    break;
                 default:
                     System.out.println("Invalid choice. Please try again.");
             }
@@ -85,6 +91,8 @@ public class Main {
         System.out.println("4. Graph analysis");
         System.out.println("5. Data structure comparison");
         System.out.println("6. Generate analysis report");
+        System.out.println("8. Experiment: Sorted vs Unsorted Edges");
+        System.out.println("9. Experiment: CSR vs Adjacency Lists");
         System.out.println("7. Exit");
         System.out.println();
     }
@@ -545,5 +553,89 @@ public class Main {
         }
 
         return queries;
+    }
+
+    /**
+     * Menu option 8: Run sorted vs unsorted experiment
+     */
+    private static void runSortedVsUnsortedExperiment() {
+        System.out.println("=== Experiment: Sorted vs Unsorted Edges ===");
+        System.out.println("Tests whether pre-sorting adjacency lists provides performance benefits.");
+        System.out.println();
+
+        String csvPath = getStringInput("Enter CSV path (press Enter for default 'data/cleaned_flights.csv'): ");
+        if (csvPath.trim().isEmpty()) {
+            csvPath = "data/cleaned_flights.csv";
+        }
+
+        int numQueries = getIntInput("Number of random queries (default 50): ");
+        if (numQueries <= 0) {
+            numQueries = 50;
+        }
+
+        String outputDir = getStringInput("Enter output directory (press Enter for 'out/experiments/sorted_vs_unsorted'): ");
+        if (outputDir.trim().isEmpty()) {
+            outputDir = "out/experiments/sorted_vs_unsorted";
+        }
+
+        try {
+            // Create a dummy graph for the ExperimentRunner - it will rebuild its own
+            Graph dummyGraph = new AdjacencyListGraph();
+            ExperimentRunner runner = new ExperimentRunner(dummyGraph);
+            runner.experimentSortedVsUnsorted(csvPath, numQueries, outputDir);
+
+            System.out.println("\nExperiment completed successfully!");
+            System.out.println("Results written to:");
+            System.out.println("- " + outputDir + "/sorted_vs_unsorted.csv");
+            System.out.println("- " + outputDir + "/sorted_vs_unsorted_README.md");
+
+        } catch (IOException e) {
+            System.err.println("Error running experiment: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Menu option 9: Run CSR vs adjacency experiment
+     */
+    private static void runCSRvsAdjacencyExperiment() {
+        System.out.println("=== Experiment: CSR Cache-Friendliness vs Adjacency Lists ===");
+        System.out.println("Tests whether cache-friendly layouts beat pointer overhead.");
+        System.out.println();
+
+        String csvPath = getStringInput("Enter CSV path (press Enter for default 'data/cleaned_flights.csv'): ");
+        if (csvPath.trim().isEmpty()) {
+            csvPath = "data/cleaned_flights.csv";
+        }
+
+        int numQueries = getIntInput("Number of random queries (default 50): ");
+        if (numQueries <= 0) {
+            numQueries = 50;
+        }
+
+        String outputDir = getStringInput("Enter output directory (press Enter for 'out/experiments/csr_vs_adjacency'): ");
+        if (outputDir.trim().isEmpty()) {
+            outputDir = "out/experiments/csr_vs_adjacency";
+        }
+
+        try {
+            // Create a dummy graph for the ExperimentRunner - it will rebuild its own
+            Graph dummyGraph = new AdjacencyListGraph();
+            ExperimentRunner runner = new ExperimentRunner(dummyGraph);
+            runner.experimentCSRvsAdjacency(csvPath, numQueries, outputDir);
+
+            System.out.println("\nExperiment completed successfully!");
+            System.out.println("Results written to:");
+            System.out.println("- " + outputDir + "/csr_vs_adjacency.csv");
+            System.out.println("- " + outputDir + "/csr_vs_adjacency_README.md");
+
+        } catch (IOException e) {
+            System.err.println("Error running experiment: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
