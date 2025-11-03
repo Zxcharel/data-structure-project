@@ -103,6 +103,45 @@ public class CsvReader {
 
         return buildGraphFromRoutes(routeMap, graphFactory);
     }
+
+    /**
+     * Reads a CSV file and builds the graph into the provided Graph implementation.
+     * Returns the same instance for chaining/assignment.
+     */
+    public Graph readCsvAndBuildGraph(String csvPath, Graph targetGraph) throws IOException {
+        Map<String, RouteAggregate> routeMap = new HashMap<>();
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(csvPath))) {
+            String line = reader.readLine();
+            if (line == null) {
+                throw new IOException("CSV file is empty");
+            }
+            
+            String[] headers = parseCsvLine(line);
+            ColumnIndices indices = findColumnIndices(headers);
+            
+            int lineNumber = 1;
+            while ((line = reader.readLine()) != null) {
+                lineNumber++;
+                try {
+                    FlightRecord record = parseFlightRecord(line, indices);
+                    if (record != null) {
+                        String routeKey = record.getRouteKey();
+                        routeMap.computeIfAbsent(routeKey, 
+                            k -> new RouteAggregate(record.getOriginCountry(), 
+                                                  record.getDestinationCountry(), 
+                                                  record.getAirline()))
+                               .addRecord(record);
+                    }
+                } catch (Exception e) {
+                    System.err.printf("Warning: Skipping malformed line %d: %s%n", lineNumber, e.getMessage());
+                }
+            }
+        }
+        
+        buildIntoGraphFromRoutes(routeMap, targetGraph);
+        return targetGraph;
+    }
     
     /**
      * Parses a CSV line, handling quoted fields
@@ -209,13 +248,20 @@ public class CsvReader {
     /**
      * Builds a graph from the aggregated route data
      */
-    private Graph buildGraphFromRoutes(Map<String, RouteAggregate> routeMap, Supplier<Graph> graphFactory) {
-        Graph graph = graphFactory.get();
-        
+    private Graph buildGraphFromRoutes(Map<String, RouteAggregate> routeMap) {
+        AdjacencyListGraph graph = new AdjacencyListGraph();
+        buildIntoGraphFromRoutes(routeMap, graph);
+        return graph;
+    }
+
+    /**
+     * Populates the provided target graph using the aggregated route data.
+     */
+    private void buildIntoGraphFromRoutes(Map<String, RouteAggregate> routeMap, Graph targetGraph) {
         for (RouteAggregate aggregate : routeMap.values()) {
             // Add nodes
-            graph.addNode(aggregate.getOriginCountry());
-            graph.addNode(aggregate.getDestinationCountry());
+            targetGraph.addNode(aggregate.getOriginCountry());
+            targetGraph.addNode(aggregate.getDestinationCountry());
             
             // Add edge with calculated weight
             Edge edge = new Edge(
@@ -229,10 +275,8 @@ public class CsvReader {
                 aggregate.calculateWeight()
             );
             
-            graph.addEdge(aggregate.getOriginCountry(), edge);
+            targetGraph.addEdge(aggregate.getOriginCountry(), edge);
         }
-        
-        return graph;
     }
     
     /**
