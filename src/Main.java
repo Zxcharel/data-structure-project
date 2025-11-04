@@ -394,8 +394,8 @@ public class Main {
         
         PrefixAutocompleteExperiment experiment = new PrefixAutocompleteExperiment();
         experiment.runExperiment(csvPath, graphChoice, nPrefixes, outputDir);
-        // Print three sample autocomplete queries to console (origin preference: SIN)
-        experiment.runSampleAutocompleteShowcase(csvPath, "SIN");
+        // Run the same three sample autocomplete queries across all graph types
+        experiment.runAllGraphsSampleShowcase(csvPath, "SIN");
         
         System.out.println("\n✅ Experiment 5 completed!");
         System.out.println("Results written to: " + outputDir);

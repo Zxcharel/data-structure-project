@@ -204,25 +204,229 @@ public class PrefixAutocompleteExperiment {
         printAutocompleteQuery((RoutePartitionedTrieGraph) graph, origin, midPrefix);
     }
 
-    private void printAutocompleteQuery(RoutePartitionedTrieGraph graph, String origin, String prefix) {
-        // Run 11 times; drop the first (warm-up), report the remaining 10
-        List<Double> runtimesMs = new ArrayList<>();
+    /**
+     * Build multiple graph implementations and run the same three sample queries on each.
+     * Prints per-graph timings and results, then a summary ranking by average time across the three queries.
+     */
+    public void runAllGraphsSampleShowcase(String csvPath, String preferredOrigin) throws IOException {
+        // Build graphs
+        CsvReader reader = new CsvReader();
+        Map<String, Graph> graphs = new LinkedHashMap<>();
+
+        Graph trie = reader.readCsvAndBuildGraph(csvPath, RoutePartitionedTrieGraph::new);
+        graphs.put("RoutePartitionedTrieGraph", trie);
+
+        Graph adj = reader.readCsvAndBuildGraph(csvPath); // defaults to AdjacencyListGraph
+        graphs.put("AdjacencyListGraph", adj);
+
+        Graph sortedAdj = reader.readCsvAndBuildGraph(csvPath, SortedAdjacencyListGraph::new);
+        graphs.put("SortedAdjacencyListGraph", sortedAdj);
+
+        Graph linArr = reader.readCsvAndBuildGraph(csvPath, LinearArrayGraph::new);
+        graphs.put("LinearArrayGraph", linArr);
+
+        Graph dynArr = reader.readCsvAndBuildGraph(csvPath, DynamicArrayGraph::new);
+        graphs.put("DynamicArrayGraph", dynArr);
+
+        Graph dblList = reader.readCsvAndBuildGraph(csvPath, DoublyLinkedListGraph::new);
+        graphs.put("DoublyLinkedListGraph", dblList);
+
+        Graph circList = reader.readCsvAndBuildGraph(csvPath, CircularLinkedListGraph::new);
+        graphs.put("CircularLinkedListGraph", circList);
+
+        Graph halfEdge = reader.readCsvAndBuildGraph(csvPath, HalfEdgeGraph::new);
+        graphs.put("HalfEdgeGraph", halfEdge);
+
+        // MatrixGraph requires capacity; build using node count from adjacency graph
+        int matrixCap = Math.max(adj.nodeCount(), 1);
+        Graph matrix = new MatrixGraph(matrixCap);
+        reader.readCsvAndBuildGraph(csvPath, matrix);
+        graphs.put("MatrixGraph", matrix);
+
+        Graph euler = reader.readCsvAndBuildGraph(csvPath, EulerTourTreeGraph::new);
+        graphs.put("EulerTourTreeGraph", euler);
+
+        Graph linkCut = reader.readCsvAndBuildGraph(csvPath, LinkCutTreeGraph::new);
+        graphs.put("LinkCutTreeGraph", linkCut);
+
+        Graph off = reader.readCsvAndBuildGraph(csvPath, OffsetArrayGraph::new);
+        if (off instanceof OffsetArrayGraph) {
+            ((OffsetArrayGraph) off).finalizeCSR();
+        }
+        graphs.put("OffsetArrayGraph", off);
+
+        Graph baseline = reader.readCsvAndBuildGraph(csvPath); // for CSR backing
+        Graph csr = new CSRGraph(baseline);
+        graphs.put("CSRGraph", csr);
+
+        // Choose fixed origin LHR if present; otherwise fall back to preferredOrigin, then any
+        String origin;
+        if (trie.hasNode("LHR")) origin = "LHR";
+        else if (trie.hasNode(preferredOrigin)) origin = preferredOrigin;
+        else origin = graphs.values().iterator().next().nodes().get(0);
+
+        // Fixed test queries as requested
+        String q1 = "B"; // many matches
+        String q2 = "J"; // few matches
+        String q3 = "Z"; // likely sparse
+
+        // Run each graph for the three prefixes
+        Map<String, List<Double>> implToAverages = new LinkedHashMap<>();
+
+        System.out.println("\n=== Autocomplete Showcase Across Graphs (origin=" + origin + ") ===");
+        System.out.println("Queries: '" + q1 + "', '" + q2 + "', '" + q3 + "'\n");
+
+        for (Map.Entry<String, Graph> entry : graphs.entrySet()) {
+            String name = entry.getKey();
+            Graph g = entry.getValue();
+            System.out.println("\n--- " + name + " ---");
+            double avgQ1 = printAutocompleteQueryGeneric(g, name, origin, q1);
+            double avgQ2 = printAutocompleteQueryGeneric(g, name, origin, q2);
+            double avgQ3 = printAutocompleteQueryGeneric(g, name, origin, q3);
+            implToAverages.put(name, Arrays.asList(avgQ1, avgQ2, avgQ3));
+        }
+
+        // Three separate summaries: one per query, each ranked fastest to slowest
+        List<Map.Entry<String, Double>> r1 = new ArrayList<>();
+        List<Map.Entry<String, Double>> r2 = new ArrayList<>();
+        List<Map.Entry<String, Double>> r3 = new ArrayList<>();
+        for (Map.Entry<String, List<Double>> e : implToAverages.entrySet()) {
+            List<Double> ts = e.getValue();
+            r1.add(new AbstractMap.SimpleEntry<>(e.getKey(), ts.get(0)));
+            r2.add(new AbstractMap.SimpleEntry<>(e.getKey(), ts.get(1)));
+            r3.add(new AbstractMap.SimpleEntry<>(e.getKey(), ts.get(2)));
+        }
+        r1.sort(Comparator.comparingDouble(Map.Entry::getValue));
+        r2.sort(Comparator.comparingDouble(Map.Entry::getValue));
+        r3.sort(Comparator.comparingDouble(Map.Entry::getValue));
+
+        System.out.println("\n=== Summary: Query '" + q1 + "' (ms), fastest to slowest ===");
+        for (Map.Entry<String, Double> e : r1) {
+            System.out.println(String.format("%s: %.5f ms", e.getKey(), e.getValue()));
+        }
+
+        System.out.println("\n=== Summary: Query '" + q2 + "' (ms), fastest to slowest ===");
+        for (Map.Entry<String, Double> e : r2) {
+            System.out.println(String.format("%s: %.5f ms", e.getKey(), e.getValue()));
+        }
+
+        System.out.println("\n=== Summary: Query '" + q3 + "' (ms), fastest to slowest ===");
+        for (Map.Entry<String, Double> e : r3) {
+            System.out.println(String.format("%s: %.5f ms", e.getKey(), e.getValue()));
+        }
+    }
+
+    private static class SamplePrefixes {
+        final String many, one, mid;
+        SamplePrefixes(String many, String one, String mid) { this.many = many; this.one = one; this.mid = mid; }
+    }
+
+    private SamplePrefixes pickSamplePrefixes(Graph graph, String origin) {
+        Set<String> codes = new HashSet<>();
+        for (Edge e : graph.neighbors(origin)) codes.add(e.getDestination());
+        Map<String, Integer> countByPrefix = new HashMap<>();
+        for (String code : codes) {
+            for (int len = 1; len <= 3 && len <= code.length(); len++) {
+                String p = code.substring(0, len);
+                countByPrefix.put(p, countByPrefix.getOrDefault(p, 0) + 1);
+            }
+        }
+        String many = null, one = null, mid = null;
+        int best = -1;
+        for (Map.Entry<String, Integer> e : countByPrefix.entrySet()) {
+            if (e.getKey().length() == 1 && e.getValue() > best) { best = e.getValue(); many = e.getKey(); }
+        }
+        one = codes.iterator().next();
+        List<Map.Entry<String, Integer>> twos = new ArrayList<>();
+        for (Map.Entry<String, Integer> e : countByPrefix.entrySet()) if (e.getKey().length() == 2) twos.add(e);
+        if (!twos.isEmpty()) { twos.sort(Comparator.comparingInt(Map.Entry::getValue)); mid = twos.get(twos.size()/2).getKey(); }
+        else { mid = one.substring(0, Math.min(2, one.length())); }
+        return new SamplePrefixes(many, one, mid);
+    }
+
+    private double printAutocompleteQueryGeneric(Graph graph, String graphName, String origin, String prefix) {
+        // Warm-up runs (not recorded)
+        final int WARMUP_RUNS = 1000;
+        for (int i = 0; i < WARMUP_RUNS; i++) {
+            if (graph instanceof RoutePartitionedTrieGraph) {
+                ((RoutePartitionedTrieGraph) graph).neighborsByPrefix(origin, prefix);
+            } else {
+                filterNeighborsByPrefix(graph.neighbors(origin), prefix);
+            }
+        }
+
+        // Measured runs: 1000 for averaging; preview shows first 10
+        final int MEASURE_RUNS = 1000;
+        final int PREVIEW_RUNS = 10;
+        List<Double> previewMs = new ArrayList<>(PREVIEW_RUNS);
         List<Edge> matches = null;
-        for (int i = 0; i < 11; i++) {
+        double sumMs = 0.0;
+        for (int i = 0; i < MEASURE_RUNS; i++) {
+            long start = System.nanoTime();
+            List<Edge> current;
+            if (graph instanceof RoutePartitionedTrieGraph) {
+                current = ((RoutePartitionedTrieGraph) graph).neighborsByPrefix(origin, prefix);
+            } else {
+                current = filterNeighborsByPrefix(graph.neighbors(origin), prefix);
+            }
+            long ns = System.nanoTime() - start;
+            double ms = ns / 1_000_000.0;
+            if (i < PREVIEW_RUNS) previewMs.add(ms);
+            sumMs += ms;
+            if (matches == null) matches = current;
+        }
+        double avgMs = sumMs / MEASURE_RUNS;
+
+        System.out.println("\nOrigin: " + origin + "  Search: " + prefix);
+        System.out.println("Runtimes (ms) [first 10 runs]: " + formatList(previewMs));
+        System.out.println(String.format("Average: %.5f ms (averaged across %d runs)", avgMs, 1000));
+        System.out.println("Matches: " + (matches != null ? matches.size() : 0));
+
+        if (matches != null && !matches.isEmpty()) {
+            List<Edge> sorted = new ArrayList<>(matches);
+            sorted.sort(Comparator.comparingDouble(Edge::getWeight).thenComparing(Edge::getDestination));
+            System.out.println("airline,destination,composite_rating_5pt,overall,value_for_money,inflight_entertainment,cabin_staff,seat_comfort");
+            for (Edge e : sorted) {
+                double compositeRating = 6.0 - e.getWeight();
+                if (compositeRating < 1.0) compositeRating = 1.0;
+                if (compositeRating > 5.0) compositeRating = 5.0;
+                System.out.println(e.getAirline() + "," + e.getDestination() + "," + String.format("%.2f", compositeRating) + "," +
+                    e.getOverallRating() + "," + e.getValueForMoney() + "," +
+                    e.getInflightEntertainment() + "," + e.getCabinStaff() + "," +
+                    e.getSeatComfort());
+            }
+        }
+
+        return avgMs;
+    }
+
+    private void printAutocompleteQuery(RoutePartitionedTrieGraph graph, String origin, String prefix) {
+        // Warm-up runs (not recorded)
+        final int WARMUP_RUNS = 1000;
+        for (int i = 0; i < WARMUP_RUNS; i++) {
+            graph.neighborsByPrefix(origin, prefix);
+        }
+
+        // Measured runs: 1000 for averaging; preview shows first 10
+        final int MEASURE_RUNS = 1000;
+        final int PREVIEW_RUNS = 10;
+        List<Double> previewMs = new ArrayList<>(PREVIEW_RUNS);
+        List<Edge> matches = null;
+        double sumMs = 0.0;
+        for (int i = 0; i < MEASURE_RUNS; i++) {
             long start = System.nanoTime();
             List<Edge> current = graph.neighborsByPrefix(origin, prefix);
             long ns = System.nanoTime() - start;
             double ms = ns / 1_000_000.0;
-            if (i > 0) { // skip first run
-                runtimesMs.add(ms);
-                matches = current;
-            }
+            if (i < PREVIEW_RUNS) previewMs.add(ms);
+            sumMs += ms;
+            matches = current;
         }
-        double avgMs = runtimesMs.stream().mapToDouble(d -> d).average().orElse(0.0);
+        double avgMs = sumMs / MEASURE_RUNS;
 
         System.out.println("\nOrigin: " + origin + "  Search: " + prefix);
-        System.out.println("Runtimes (ms): " + formatList(runtimesMs));
-        System.out.println(String.format("Average: %.5f ms", avgMs));
+        System.out.println("Runtimes (ms) [first 10 runs]: " + formatList(previewMs));
+        System.out.println(String.format("Average: %.5f ms (averaged across %d runs)", avgMs, 1000));
         System.out.println("Matches: " + (matches != null ? matches.size() : 0));
 
         if (matches != null && !matches.isEmpty()) {
