@@ -386,28 +386,19 @@ public class Main {
         System.out.println("\n=== Running Experiment 5: Prefix Autocomplete ===");
         String csvPath = "data/cleaned_flights.csv";
         
-        System.out.println("Select graph type for prefix experiment:");
-        System.out.println("1. RoutePartitionedTrieGraph (recommended for this experiment)");
-        System.out.println("2. AdjacencyListGraph (baseline)");
-        System.out.println("3. OffsetArrayGraph (baseline)");
-        System.out.println("4. CSRGraph (baseline)");
-        
-        int graphChoice = getIntInput("Enter choice (1-4, default 1): ");
-        if (graphChoice < 1 || graphChoice > 4) graphChoice = 1;
-        
-        int nPrefixes = getIntInput("Number of prefixes per origin (default 20): ");
-        if (nPrefixes <= 0) {
-            nPrefixes = 20;
-        }
+        // Run with defaults (trie forced in the experiment implementation)
+        int graphChoice = 1;
+        int nPrefixes = 100;
         
         String outputDir = "out/experiments/experiment5_prefix_autocomplete";
         
         PrefixAutocompleteExperiment experiment = new PrefixAutocompleteExperiment();
         experiment.runExperiment(csvPath, graphChoice, nPrefixes, outputDir);
+        // Print three sample autocomplete queries to console (origin preference: SIN)
+        experiment.runSampleAutocompleteShowcase(csvPath, "SIN");
         
         System.out.println("\n✅ Experiment 5 completed!");
         System.out.println("Results written to: " + outputDir);
-        System.out.println("Note: For comparison, run this experiment again with a different graph type");
     }
 
     /**
