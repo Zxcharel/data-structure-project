@@ -21,6 +21,7 @@ import src.experiments.CacheLocalityExperiment;
 import src.experiments.NeighborIterationExperiment;
 import src.experiments.ScalingExperiment;
 import src.experiments.PrefixAutocompleteExperiment;
+import src.experiments.PrefixAutocompleteExperimentUserInput;
 import src.analysis.GraphAnalyzer;
 import src.analysis.CentralityMetrics;
 import src.comparison.DataStructureComparator;
@@ -252,11 +253,12 @@ public class Main {
         System.out.println("3. Experiment 3: Neighbor Iteration Performance");
         System.out.println("4. Experiment 4: The Graph Size Deception (Scaling)");
         System.out.println("5. Experiment 5: Prefix Autocomplete (Trie vs Arrays)");
-        System.out.println("6. Run all experiments");
-        System.out.println("7. Back to main menu");
+        System.out.println("6. Experiment 5 (Interactive): Prefix Autocomplete (user input)");
+        System.out.println("7. Run all experiments");
+        System.out.println("8. Back to main menu");
 
-        int expChoice = getIntInput("\nEnter choice (1-7): ");
-        if (expChoice < 1 || expChoice > 7) {
+        int expChoice = getIntInput("\nEnter choice (1-8): ");
+        if (expChoice < 1 || expChoice > 8) {
             System.out.println("Invalid choice.");
             return;
         }
@@ -281,6 +283,9 @@ public class Main {
                     runExperiment5();
                     break;
                 case 6:
+                    runExperiment5Interactive();
+                    break;
+                case 7:
                     System.out.println("\n=== Running All Experiments ===\n");
                     runExperiment1();
                     System.out.println("\n");
@@ -293,7 +298,7 @@ public class Main {
                     runExperiment5();
                     System.out.println("\n=== All Experiments Completed ===");
                     break;
-                case 7:
+                case 8:
                     return;
             }
         } catch (IOException e) {
@@ -399,6 +404,17 @@ public class Main {
         
         System.out.println("\n✅ Experiment 5 completed!");
         System.out.println("Results written to: " + outputDir);
+    }
+
+    /**
+     * Runs Experiment 5 (Interactive): User-input driven prefix autocomplete on trie
+     */
+    private static void runExperiment5Interactive() throws IOException {
+        System.out.println("\n=== Running Experiment 5 (Interactive): Prefix Autocomplete ===");
+        String csvPath = "data/cleaned_flights.csv";
+        PrefixAutocompleteExperimentUserInput experiment = new PrefixAutocompleteExperimentUserInput();
+        experiment.runInteractive(csvPath);
+        System.out.println("\n✅ Interactive Experiment completed!");
     }
 
     /**
