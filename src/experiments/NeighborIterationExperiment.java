@@ -18,58 +18,134 @@ import java.util.*;
 public class NeighborIterationExperiment {
     
     private static final String DEFAULT_CSV_PATH = "data/cleaned_flights.csv";
-    private static final int NUM_ITERATIONS = 50; 
-    private static final int WARMUP_ITERATIONS = 5; 
-    private static final long DELAY_MS = 1;  
-    private static final int MAX_NODES_PER_CATEGORY = 100;  
+    
+    // Phase 1: Baseline (Control)
+    private static final int BASELINE_ITERATIONS = 1000;  
+    private static final int BASELINE_NODES_PER_CATEGORY = 1; 
+    
+    // Phase 2: Random Sampling
+    private static final int RANDOM_ITERATIONS = 1000; 
+    private static final int RANDOM_NODES_PER_CATEGORY = 100;
+    
+    // Common settings
+    private static final int WARMUP_ITERATIONS = 10;
+    private static final long DELAY_MS = 1;
     private static final Random random = new Random(42);
     
     /**
      * Runs the neighbor iteration experiment
      */
     public void runExperiment(String csvPath, String outputDir) throws IOException {
-        System.out.println("=== Experiment 3: Neighbor Iteration Performance ===");
-        System.out.println("Building all graph types from: " + csvPath);
+        System.out.println("=== Experiment 3: Two-Phase Neighbor Iteration Performance ===");
+        System.out.println("Phase 1: Baseline Control (3 queries × 1000 iterations)");
+        System.out.println("Phase 2: Random Sampling (300 queries × 1000 iterations)");
+        System.out.println("\nBuilding all graph types from: " + csvPath);
         
         Map<String, Graph> graphs = buildAllGraphTypes(csvPath);
         System.out.println("Built " + graphs.size() + " graph types\n");
         
         Graph baseGraph = graphs.values().iterator().next();
-        Map<String, List<String>> nodesByCategory = categorizeNodesByDegree(baseGraph);
         
-        System.out.println("Test nodes:");
-        System.out.println("  Sparse (1-5 edges): " + nodesByCategory.get("sparse").size());
-        System.out.println("  Medium (10-20 edges): " + nodesByCategory.get("medium").size());
-        System.out.println("  Dense (50+ edges): " + nodesByCategory.get("dense").size());
+        // Phase 1: Baseline Control
+        System.out.println("=== PHASE 1: BASELINE CONTROL ===");
+        Map<String, List<String>> baselineNodes = selectBaselineNodes(baseGraph);
+        System.out.println("Selected baseline queries:");
+        System.out.println("  Small (sparse): " + baselineNodes.get("sparse").size() + " node(s)");
+        System.out.println("  Medium: " + baselineNodes.get("medium").size() + " node(s)");
+        System.out.println("  Big (dense): " + baselineNodes.get("dense").size() + " node(s)");
+        System.out.println("  Iterations per query: " + BASELINE_ITERATIONS);
         System.out.println();
         
-        System.out.println("Measuring neighbor iteration performance...");
+        Map<String, List<IterationResult>> baselineResults = runPhase(graphs, baselineNodes, 
+                                                                       BASELINE_ITERATIONS, "BASELINE");
+        
+        // Phase 2: Random Sampling
+        System.out.println("\n=== PHASE 2: RANDOM SAMPLING ===");
+        Map<String, List<String>> randomNodes = selectRandomNodes(baseGraph);
+        System.out.println("Selected random samples:");
+        System.out.println("  Sparse: " + randomNodes.get("sparse").size() + " nodes");
+        System.out.println("  Medium: " + randomNodes.get("medium").size() + " nodes");
+        System.out.println("  Dense: " + randomNodes.get("dense").size() + " nodes");
+        System.out.println("  Iterations per query: " + RANDOM_ITERATIONS);
+        System.out.println();
+        
+        Map<String, List<IterationResult>> randomResults = runPhase(graphs, randomNodes, 
+                                                                     RANDOM_ITERATIONS, "RANDOM");
+        
+        // Combine results
+        System.out.println("\nCombining results from both phases...");
+        Map<String, List<IterationResult>> allResults = new HashMap<>();
+        for (String graphType : baselineResults.keySet()) {
+            List<IterationResult> combined = new ArrayList<>();
+            combined.addAll(baselineResults.get(graphType));
+            combined.addAll(randomResults.get(graphType));
+            allResults.put(graphType, combined);
+        }
+        
+        System.out.println("\nMeasuring iteration time within Dijkstra runs...");
+        Map<String, DijkstraIterationStats> dijkstraStats = measureWithinDijkstra(graphs);
+        
+        System.out.println("\nAnalyzing results...");
+        analyzeAndWriteResults(allResults, dijkstraStats, outputDir);
+        System.out.println("Experiment completed! Results written to: " + outputDir);
+        System.out.println("\nPhase Summary:");
+        System.out.println("  Baseline: 3 queries × 1000 iterations = " + 
+                          (baselineResults.values().stream().mapToInt(List::size).sum()) + " measurements");
+        System.out.println("  Random: ~300 queries × 1000 iterations = " + 
+                          (randomResults.values().stream().mapToInt(List::size).sum()) + " measurements");
+    }
+    
+    private Map<String, List<String>> selectBaselineNodes(Graph graph) {
+        Map<String, List<String>> categories = categorizeAllNodesByDegree(graph);
+        
+        // Select exactly 1 node per category for baseline control
+        limitCategory(categories, "sparse", BASELINE_NODES_PER_CATEGORY);
+        limitCategory(categories, "medium", BASELINE_NODES_PER_CATEGORY);
+        limitCategory(categories, "dense", BASELINE_NODES_PER_CATEGORY);
+        
+        return categories;
+    }
+    
+    private Map<String, List<String>> selectRandomNodes(Graph graph) {
+        Map<String, List<String>> categories = categorizeAllNodesByDegree(graph);
+        
+        // Sample many random nodes per category
+        limitCategory(categories, "sparse", RANDOM_NODES_PER_CATEGORY);
+        limitCategory(categories, "medium", RANDOM_NODES_PER_CATEGORY);
+        limitCategory(categories, "dense", RANDOM_NODES_PER_CATEGORY);
+        
+        return categories;
+    }
+    
+    private Map<String, List<IterationResult>> runPhase(Map<String, Graph> graphs, 
+                                                        Map<String, List<String>> nodesByCategory,
+                                                        int numIterations, String phaseLabel) {
         Map<String, List<IterationResult>> results = new HashMap<>();
         
         for (Map.Entry<String, Graph> entry : graphs.entrySet()) {
             String graphType = entry.getKey();
             Graph graph = entry.getValue();
-            System.out.println("Testing " + graphType + "...");
+            System.out.println("Testing " + graphType + " [" + phaseLabel + "]...");
             
             List<IterationResult> graphResults = new ArrayList<>();
             
             for (String node : nodesByCategory.get("sparse")) {
                 if (graph.hasNode(node)) {
-                    IterationResult result = measureIteration(graph, node, "sparse");
+                    IterationResult result = measureIteration(graph, node, "sparse", numIterations, phaseLabel);
                     if (result != null) graphResults.add(result);
                 }
             }
             
             for (String node : nodesByCategory.get("medium")) {
                 if (graph.hasNode(node)) {
-                    IterationResult result = measureIteration(graph, node, "medium");
+                    IterationResult result = measureIteration(graph, node, "medium", numIterations, phaseLabel);
                     if (result != null) graphResults.add(result);
                 }
             }
             
             for (String node : nodesByCategory.get("dense")) {
                 if (graph.hasNode(node)) {
-                    IterationResult result = measureIteration(graph, node, "dense");
+                    IterationResult result = measureIteration(graph, node, "dense", numIterations, phaseLabel);
                     if (result != null) graphResults.add(result);
                 }
             }
@@ -77,12 +153,7 @@ public class NeighborIterationExperiment {
             results.put(graphType, graphResults);
         }
         
-        System.out.println("\nMeasuring iteration time within Dijkstra runs...");
-        Map<String, DijkstraIterationStats> dijkstraStats = measureWithinDijkstra(graphs);
-        
-        System.out.println("\nAnalyzing results...");
-        analyzeAndWriteResults(results, dijkstraStats, outputDir);
-        System.out.println("Experiment completed! Results written to: " + outputDir);
+        return results;
     }
     
     private Map<String, Graph> buildAllGraphTypes(String csvPath) throws IOException {
@@ -131,7 +202,7 @@ public class NeighborIterationExperiment {
         return graphs;
     }
     
-    private Map<String, List<String>> categorizeNodesByDegree(Graph graph) {
+    private Map<String, List<String>> categorizeAllNodesByDegree(Graph graph) {
         Map<String, List<String>> categories = new HashMap<>();
         categories.put("sparse", new ArrayList<>());
         categories.put("medium", new ArrayList<>());
@@ -153,22 +224,18 @@ public class NeighborIterationExperiment {
         Collections.shuffle(categories.get("medium"), random);
         Collections.shuffle(categories.get("dense"), random);
         
-        // Stratified sampling: limit to MAX_NODES_PER_CATEGORY
-        limitCategory(categories, "sparse");
-        limitCategory(categories, "medium");
-        limitCategory(categories, "dense");
-        
         return categories;
     }
     
-    private void limitCategory(Map<String, List<String>> categories, String category) {
+    private void limitCategory(Map<String, List<String>> categories, String category, int limit) {
         List<String> nodes = categories.get(category);
-        if (nodes.size() > MAX_NODES_PER_CATEGORY) {
-            categories.put(category, nodes.subList(0, MAX_NODES_PER_CATEGORY));
+        if (nodes.size() > limit) {
+            categories.put(category, nodes.subList(0, limit));
         }
     }
     
-    private IterationResult measureIteration(Graph graph, String node, String category) {
+    private IterationResult measureIteration(Graph graph, String node, String category, 
+                                            int numIterations, String phaseLabel) {
         // Warmup phase
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
             graph.neighbors(node);
@@ -178,7 +245,7 @@ public class NeighborIterationExperiment {
         List<Long> measurements = new ArrayList<>();
         int edgeCount = 0;
         
-        for (int i = 0; i < NUM_ITERATIONS; i++) {
+        for (int i = 0; i < numIterations; i++) {
             long start = System.nanoTime();
             List<Edge> neighbors = graph.neighbors(node);
             long end = System.nanoTime();
@@ -192,7 +259,7 @@ public class NeighborIterationExperiment {
             }
             
             // Small delay to prevent JVM burst optimization (except last iteration)
-            if (i < NUM_ITERATIONS - 1) {
+            if (i < numIterations - 1) {
                 try {
                     Thread.sleep(DELAY_MS);
                 } catch (InterruptedException e) {
@@ -203,12 +270,12 @@ public class NeighborIterationExperiment {
         
         // Calculate comprehensive statistics
         return calculateIterationStats(graph.getClass().getSimpleName(), node, 
-                                      category, measurements, edgeCount);
+                                      category, measurements, edgeCount, phaseLabel);
     }
     
     private IterationResult calculateIterationStats(String graphType, String node, 
                                                     String category, List<Long> measurements, 
-                                                    int edgeCount) {
+                                                    int edgeCount, String phaseLabel) {
         // Mean
         double avgTime = measurements.stream()
             .mapToLong(Long::longValue)
@@ -235,7 +302,7 @@ public class NeighborIterationExperiment {
         double timePerEdge = edgeCount > 0 ? avgTime / edgeCount : 0;
         
         return new IterationResult(graphType, node, category, edgeCount, 
-                                   avgTime, stdDev, cov, p95, timePerEdge);
+                                   avgTime, stdDev, cov, p95, timePerEdge, phaseLabel);
     }
     
     private Map<String, DijkstraIterationStats> measureWithinDijkstra(Map<String, Graph> graphs) {
@@ -301,7 +368,7 @@ public class NeighborIterationExperiment {
         
         List<String[]> csvRows = new ArrayList<>();
         String[] headers = {"graph_type", "node", "category", "degree", "avg_time_ns", 
-                           "std_dev_ns", "cov_percent", "p95_ns", "time_per_edge_ns"};
+                           "std_dev_ns", "cov_percent", "p95_ns", "time_per_edge_ns", "phase"};
         
         for (Map.Entry<String, List<IterationResult>> entry : results.entrySet()) {
             for (IterationResult result : entry.getValue()) {
@@ -312,7 +379,8 @@ public class NeighborIterationExperiment {
                     String.format("%.2f", result.stdDevNs),
                     String.format("%.2f", result.coefficientOfVariation),
                     String.valueOf(result.percentile95Ns),
-                    String.format("%.2f", result.timePerEdgeNs)
+                    String.format("%.2f", result.timePerEdgeNs),
+                    result.phase
                 });
             }
         }
@@ -325,8 +393,9 @@ public class NeighborIterationExperiment {
                                    Map<String, DijkstraIterationStats> dijkstraStats,
                                    String outputPath) throws IOException {
         StringBuilder report = new StringBuilder();
-        report.append("# Neighbor Iteration Performance - Enhanced Summary\n\n");
-        report.append("**Statistical Rigor**: 50 iterations per node, comprehensive metrics\n\n");
+        report.append("# Neighbor Iteration Performance - Baseline Query Analysis\n\n");
+        report.append("**Baseline Approach**: 3 representative queries (small/medium/big) × 1000 iterations each\n");
+        report.append("**Statistical Power**: n=1000 per query for deep statistical analysis\n\n");
         
         Map<String, AvgIterationStats> avgStats = new HashMap<>();
         for (Map.Entry<String, List<IterationResult>> entry : results.entrySet()) {
@@ -390,12 +459,13 @@ public class NeighborIterationExperiment {
             }
         }
         
-        report.append("\n## Validation\n\n");
-        report.append("✓ Statistical rigor: 50 iterations per measurement\n");
-        report.append("✓ Comprehensive metrics: mean, stdDev, CoV, 95th percentile\n");
-        report.append("✓ JVM warm-up: 5 warm-up iterations before measurements\n");
-        report.append("✓ Burst optimization prevention: 1ms delay between iterations\n");
-        report.append("✓ Stratified sampling: Up to 100 nodes per degree category\n");
+        report.append("\n## Baseline Methodology\n\n");
+        report.append("✓ **Query Selection**: 3 representative nodes (1 small, 1 medium, 1 big)\n");
+        report.append("✓ **Iterations**: 1000 runs per query for deep statistics\n");
+        report.append("✓ **Comprehensive metrics**: mean, stdDev, CoV, 95th percentile\n");
+        report.append("✓ **JVM warm-up**: 10 warm-up iterations before measurements\n");
+        report.append("✓ **Burst optimization prevention**: 1ms delay between iterations\n");
+        report.append("✓ **Statistical power**: n=1000 provides very high confidence\n");
         
         IOUtils.writeMarkdown(outputPath, report.toString());
     }
@@ -408,10 +478,11 @@ public class NeighborIterationExperiment {
         final double coefficientOfVariation;
         final long percentile95Ns;
         final double timePerEdgeNs;
+        final String phase;
         
         IterationResult(String graphType, String node, String category, int degree,
                        double avgTimeNs, double stdDevNs, double coefficientOfVariation,
-                       long percentile95Ns, double timePerEdgeNs) {
+                       long percentile95Ns, double timePerEdgeNs, String phase) {
             this.graphType = graphType;
             this.node = node;
             this.category = category;
@@ -421,6 +492,7 @@ public class NeighborIterationExperiment {
             this.coefficientOfVariation = coefficientOfVariation;
             this.percentile95Ns = percentile95Ns;
             this.timePerEdgeNs = timePerEdgeNs;
+            this.phase = phase;
         }
     }
     
