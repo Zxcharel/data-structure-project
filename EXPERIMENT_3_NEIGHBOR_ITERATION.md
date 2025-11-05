@@ -7,7 +7,7 @@
 
 ## Overview
 
-This experiment isolates and measures the most critical operation in Dijkstra's algorithm: `graph.neighbors(node)`. This method is called thousands of times during pathfinding, making it the primary performance bottleneck. By measuring neighbor iteration performance in isolation, we can understand WHY certain graph structures perform better than others.
+This experiment isolates and measures the most critical operation in Dijkstra's algorithm: `graph.neighbors(node)`. This method is called thousands of times during pathfinding, making it the primary performance bottleneck. By measuring neighbor iteration performance in isolation, we can understand why certain graph structures perform better than others.
 
 ---
 

@@ -152,10 +152,6 @@ public class PathfindingBenchmarkExperiment {
         
         graphs.put("RoutePartitionedTrieGraph", 
             buildGraphWithMemory(reader, csvPath, RoutePartitionedTrieGraph::new, runtime));
-        graphs.put("LinkCutTreeGraph", 
-            buildGraphWithMemory(reader, csvPath, LinkCutTreeGraph::new, runtime));
-        graphs.put("EulerTourTreeGraph", 
-            buildGraphWithMemory(reader, csvPath, EulerTourTreeGraph::new, runtime));
         
         return graphs;
     }

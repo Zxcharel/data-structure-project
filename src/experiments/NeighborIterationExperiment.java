@@ -115,10 +115,10 @@ public class NeighborIterationExperiment {
         graphs.put("OffsetArrayGraph", offsetGraph);
         graphs.put("RoutePartitionedTrieGraph", 
             reader.readCsvAndBuildGraph(csvPath, RoutePartitionedTrieGraph::new));
-        graphs.put("LinkCutTreeGraph", 
-            reader.readCsvAndBuildGraph(csvPath, LinkCutTreeGraph::new));
-        graphs.put("EulerTourTreeGraph", 
-            reader.readCsvAndBuildGraph(csvPath, EulerTourTreeGraph::new));
+        
+        // Excluded from experiment per user request:
+        // - LinkCutTreeGraph
+        // - EulerTourTreeGraph
         
         return graphs;
     }
