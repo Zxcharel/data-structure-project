@@ -89,36 +89,42 @@ public class NeighborIterationExperiment {
         Map<String, Graph> graphs = new LinkedHashMap<>();
         CsvReader reader = new CsvReader();
         
+        // 1. AdjacencyListGraph - Baseline (standard implementation)
         Graph baseGraph = reader.readCsvAndBuildGraph(csvPath);
-        
         graphs.put("AdjacencyListGraph", baseGraph);
+        
+        // 2. CSRGraph - Optimized (industry standard)
+        graphs.put("CSRGraph", new CSRGraph(baseGraph));
+        
+        // 3. SortedAdjacencyListGraph - Fastest (pre-sorted edges)
         graphs.put("SortedAdjacencyListGraph", 
             reader.readCsvAndBuildGraph(csvPath, SortedAdjacencyListGraph::new));
         
+        // 4. OffsetArrayGraph - CSR variant (different memory layout)
+        Graph offsetGraphTemp = reader.readCsvAndBuildGraph(csvPath, OffsetArrayGraph::new);
+        OffsetArrayGraph offsetGraph = (OffsetArrayGraph) offsetGraphTemp;
+        offsetGraph.finalizeCSR();
+        graphs.put("OffsetArrayGraph", offsetGraph);
+        
+        // 5. MatrixGraph - Comparison (worst case for sparse graphs)
         int nodeCount = baseGraph.nodeCount();
         MatrixGraph matrixGraph = new MatrixGraph(nodeCount * 2);
         reader.readCsvAndBuildGraph(csvPath, matrixGraph);
         graphs.put("MatrixGraph", matrixGraph);
         
-        graphs.put("CSRGraph", new CSRGraph(baseGraph));
-        graphs.put("DoublyLinkedListGraph", 
-            reader.readCsvAndBuildGraph(csvPath, DoublyLinkedListGraph::new));
-        graphs.put("CircularLinkedListGraph", 
-            reader.readCsvAndBuildGraph(csvPath, CircularLinkedListGraph::new));
-        graphs.put("HalfEdgeGraph", 
-            reader.readCsvAndBuildGraph(csvPath, HalfEdgeGraph::new));
-        graphs.put("LinearArrayGraph", 
-            reader.readCsvAndBuildGraph(csvPath, LinearArrayGraph::new));
-        graphs.put("DynamicArrayGraph", 
-            reader.readCsvAndBuildGraph(csvPath, DynamicArrayGraph::new));
-        Graph offsetGraphTemp = reader.readCsvAndBuildGraph(csvPath, OffsetArrayGraph::new);
-        OffsetArrayGraph offsetGraph = (OffsetArrayGraph) offsetGraphTemp;
-        offsetGraph.finalizeCSR(); // Finalize for optimal performance
-        graphs.put("OffsetArrayGraph", offsetGraph);
+        // 6. RoutePartitionedTrieGraph - Specialized (for prefix queries in Experiment 5)
         graphs.put("RoutePartitionedTrieGraph", 
             reader.readCsvAndBuildGraph(csvPath, RoutePartitionedTrieGraph::new));
         
-        // Excluded from experiment per user request:
+        // 7. HalfEdgeGraph - Specialized structure
+        graphs.put("HalfEdgeGraph", 
+            reader.readCsvAndBuildGraph(csvPath, HalfEdgeGraph::new));
+        
+        // Excluded from this experiment:
+        // - DoublyLinkedListGraph
+        // - CircularLinkedListGraph
+        // - LinearArrayGraph
+        // - DynamicArrayGraph
         // - LinkCutTreeGraph
         // - EulerTourTreeGraph
         
