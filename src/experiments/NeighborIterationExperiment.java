@@ -18,8 +18,10 @@ import java.util.*;
 public class NeighborIterationExperiment {
     
     private static final String DEFAULT_CSV_PATH = "data/cleaned_flights.csv";
-    private static final int NUM_ITERATIONS = 10;
-    private static final int WARMUP_ITERATIONS = 2;
+    private static final int NUM_ITERATIONS = 50; 
+    private static final int WARMUP_ITERATIONS = 5; 
+    private static final long DELAY_MS = 1;  
+    private static final int MAX_NODES_PER_CATEGORY = 100;  
     private static final Random random = new Random(42);
     
     /**
@@ -140,40 +142,94 @@ public class NeighborIterationExperiment {
             }
         }
         
+        // Shuffle for random sampling
         Collections.shuffle(categories.get("sparse"), random);
         Collections.shuffle(categories.get("medium"), random);
         Collections.shuffle(categories.get("dense"), random);
         
-        // Use ALL nodes - no limits
+        // Stratified sampling: limit to MAX_NODES_PER_CATEGORY
+        limitCategory(categories, "sparse");
+        limitCategory(categories, "medium");
+        limitCategory(categories, "dense");
+        
         return categories;
     }
     
+    private void limitCategory(Map<String, List<String>> categories, String category) {
+        List<String> nodes = categories.get(category);
+        if (nodes.size() > MAX_NODES_PER_CATEGORY) {
+            categories.put(category, nodes.subList(0, MAX_NODES_PER_CATEGORY));
+        }
+    }
+    
     private IterationResult measureIteration(Graph graph, String node, String category) {
-        long totalTime = 0;
-        int edgeCount = 0;
-        
+        // Warmup phase
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
             graph.neighbors(node);
         }
+        
+        // Collect all measurements
+        List<Long> measurements = new ArrayList<>();
+        int edgeCount = 0;
         
         for (int i = 0; i < NUM_ITERATIONS; i++) {
             long start = System.nanoTime();
             List<Edge> neighbors = graph.neighbors(node);
             long end = System.nanoTime();
             
-            totalTime += (end - start);
+            measurements.add(end - start);
             edgeCount = neighbors.size();
             
+            // Prevent optimization
             for (Edge e : neighbors) {
                 if (e.getWeight() < 0) break;
             }
+            
+            // Small delay to prevent JVM burst optimization (except last iteration)
+            if (i < NUM_ITERATIONS - 1) {
+                try {
+                    Thread.sleep(DELAY_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
         
-        long avgTime = totalTime / NUM_ITERATIONS;
-        double timePerEdge = edgeCount > 0 ? (double) avgTime / edgeCount : 0;
+        // Calculate comprehensive statistics
+        return calculateIterationStats(graph.getClass().getSimpleName(), node, 
+                                      category, measurements, edgeCount);
+    }
+    
+    private IterationResult calculateIterationStats(String graphType, String node, 
+                                                    String category, List<Long> measurements, 
+                                                    int edgeCount) {
+        // Mean
+        double avgTime = measurements.stream()
+            .mapToLong(Long::longValue)
+            .average()
+            .orElse(0);
         
-        return new IterationResult(graph.getClass().getSimpleName(), node, category,
-            edgeCount, avgTime, timePerEdge);
+        // Standard deviation
+        double variance = measurements.stream()
+            .mapToDouble(t -> Math.pow(t - avgTime, 2))
+            .average()
+            .orElse(0);
+        double stdDev = Math.sqrt(variance);
+        
+        // Coefficient of variation (%)
+        double cov = avgTime > 0 ? (stdDev / avgTime) * 100.0 : 0;
+        
+        // 95th percentile
+        List<Long> sorted = new ArrayList<>(measurements);
+        Collections.sort(sorted);
+        int p95Index = (int) Math.ceil(sorted.size() * 0.95) - 1;
+        long p95 = sorted.get(Math.max(0, Math.min(p95Index, sorted.size() - 1)));
+        
+        // Time per edge
+        double timePerEdge = edgeCount > 0 ? avgTime / edgeCount : 0;
+        
+        return new IterationResult(graphType, node, category, edgeCount, 
+                                   avgTime, stdDev, cov, p95, timePerEdge);
     }
     
     private Map<String, DijkstraIterationStats> measureWithinDijkstra(Map<String, Graph> graphs) {
@@ -238,13 +294,18 @@ public class NeighborIterationExperiment {
         IOUtils.ensureParentDirectoryExists(outputDir + "/iteration.csv");
         
         List<String[]> csvRows = new ArrayList<>();
-        String[] headers = {"graph_type", "node", "category", "degree", "iteration_time_ns", "time_per_edge_ns"};
+        String[] headers = {"graph_type", "node", "category", "degree", "avg_time_ns", 
+                           "std_dev_ns", "cov_percent", "p95_ns", "time_per_edge_ns"};
         
         for (Map.Entry<String, List<IterationResult>> entry : results.entrySet()) {
             for (IterationResult result : entry.getValue()) {
                 csvRows.add(new String[]{
                     result.graphType, result.node, result.category,
-                    String.valueOf(result.degree), String.valueOf(result.iterationTimeNs),
+                    String.valueOf(result.degree), 
+                    String.format("%.2f", result.avgTimeNs),
+                    String.format("%.2f", result.stdDevNs),
+                    String.format("%.2f", result.coefficientOfVariation),
+                    String.valueOf(result.percentile95Ns),
                     String.format("%.2f", result.timePerEdgeNs)
                 });
             }
@@ -258,30 +319,34 @@ public class NeighborIterationExperiment {
                                    Map<String, DijkstraIterationStats> dijkstraStats,
                                    String outputPath) throws IOException {
         StringBuilder report = new StringBuilder();
-        report.append("# Neighbor Iteration Performance - Summary\n\n");
+        report.append("# Neighbor Iteration Performance - Enhanced Summary\n\n");
+        report.append("**Statistical Rigor**: 50 iterations per node, comprehensive metrics\n\n");
         
         Map<String, AvgIterationStats> avgStats = new HashMap<>();
         for (Map.Entry<String, List<IterationResult>> entry : results.entrySet()) {
             String graphType = entry.getKey();
             List<IterationResult> list = entry.getValue();
             
-            double avgTime = list.stream().mapToLong(r -> r.iterationTimeNs).average().orElse(0);
+            double avgTime = list.stream().mapToDouble(r -> r.avgTimeNs).average().orElse(0);
+            double avgStdDev = list.stream().mapToDouble(r -> r.stdDevNs).average().orElse(0);
+            double avgCoV = list.stream().mapToDouble(r -> r.coefficientOfVariation).average().orElse(0);
+            double avgP95 = list.stream().mapToLong(r -> r.percentile95Ns).average().orElse(0);
             double avgTimePerEdge = list.stream().mapToDouble(r -> r.timePerEdgeNs).average().orElse(0);
             
-            avgStats.put(graphType, new AvgIterationStats(avgTime, avgTimePerEdge));
+            avgStats.put(graphType, new AvgIterationStats(avgTime, avgStdDev, avgCoV, avgP95, avgTimePerEdge));
         }
         
         List<Map.Entry<String, AvgIterationStats>> sorted = new ArrayList<>(avgStats.entrySet());
         sorted.sort(Comparator.comparing(e -> e.getValue().avgTime));
         
         report.append("## Average Iteration Performance\n\n");
-        report.append("| Graph Type | Avg Iteration Time (ns) | Avg Time Per Edge (ns) |\n");
-        report.append("|-----------|-------------------------|------------------------|\n");
+        report.append("| Graph Type | Avg Time (ns) | Std Dev (ns) | CoV (%) | 95th %ile (ns) | Time/Edge (ns) |\n");
+        report.append("|-----------|---------------|--------------|---------|----------------|----------------|\n");
         
         for (Map.Entry<String, AvgIterationStats> entry : sorted) {
             AvgIterationStats stat = entry.getValue();
-            report.append(String.format("| %s | %.2f | %.2f |\n",
-                entry.getKey(), stat.avgTime, stat.avgTimePerEdge));
+            report.append(String.format("| %s | %.2f | %.2f | %.2f | %.2f | %.2f |\n",
+                entry.getKey(), stat.avgTime, stat.avgStdDev, stat.avgCoV, stat.avgP95, stat.avgTimePerEdge));
         }
         
         if (!dijkstraStats.isEmpty()) {
@@ -299,9 +364,32 @@ public class NeighborIterationExperiment {
         report.append("\n## Key Findings\n\n");
         if (!sorted.isEmpty()) {
             Map.Entry<String, AvgIterationStats> fastest = sorted.get(0);
-            report.append(String.format("- **Fastest Iteration**: %s (%.2f ns avg)\n",
-                fastest.getKey(), fastest.getValue().avgTime));
+            Map.Entry<String, AvgIterationStats> slowest = sorted.get(sorted.size() - 1);
+            
+            report.append(String.format("- **Fastest Iteration**: %s (%.2f ns avg, %.2f ns stdDev)\n",
+                fastest.getKey(), fastest.getValue().avgTime, fastest.getValue().avgStdDev));
+            report.append(String.format("- **Slowest Iteration**: %s (%.2f ns avg, %.2f ns stdDev)\n",
+                slowest.getKey(), slowest.getValue().avgTime, slowest.getValue().avgStdDev));
+            
+            double speedup = slowest.getValue().avgTime / fastest.getValue().avgTime;
+            report.append(String.format("- **Performance Gap**: %.2fx (fastest vs slowest)\n", speedup));
+            
+            // Consistency analysis
+            Map.Entry<String, AvgIterationStats> mostConsistent = sorted.stream()
+                .min(Comparator.comparing(e -> e.getValue().avgCoV))
+                .orElse(null);
+            if (mostConsistent != null) {
+                report.append(String.format("- **Most Consistent**: %s (CoV: %.2f%%)\n",
+                    mostConsistent.getKey(), mostConsistent.getValue().avgCoV));
+            }
         }
+        
+        report.append("\n## Validation\n\n");
+        report.append("✓ Statistical rigor: 50 iterations per measurement\n");
+        report.append("✓ Comprehensive metrics: mean, stdDev, CoV, 95th percentile\n");
+        report.append("✓ JVM warm-up: 5 warm-up iterations before measurements\n");
+        report.append("✓ Burst optimization prevention: 1ms delay between iterations\n");
+        report.append("✓ Stratified sampling: Up to 100 nodes per degree category\n");
         
         IOUtils.writeMarkdown(outputPath, report.toString());
     }
@@ -309,24 +397,40 @@ public class NeighborIterationExperiment {
     private static class IterationResult {
         final String graphType, node, category;
         final int degree;
-        final long iterationTimeNs;
+        final double avgTimeNs;
+        final double stdDevNs;
+        final double coefficientOfVariation;
+        final long percentile95Ns;
         final double timePerEdgeNs;
         
         IterationResult(String graphType, String node, String category, int degree,
-                       long iterationTimeNs, double timePerEdgeNs) {
+                       double avgTimeNs, double stdDevNs, double coefficientOfVariation,
+                       long percentile95Ns, double timePerEdgeNs) {
             this.graphType = graphType;
             this.node = node;
             this.category = category;
             this.degree = degree;
-            this.iterationTimeNs = iterationTimeNs;
+            this.avgTimeNs = avgTimeNs;
+            this.stdDevNs = stdDevNs;
+            this.coefficientOfVariation = coefficientOfVariation;
+            this.percentile95Ns = percentile95Ns;
             this.timePerEdgeNs = timePerEdgeNs;
         }
     }
     
     private static class AvgIterationStats {
-        final double avgTime, avgTimePerEdge;
-        AvgIterationStats(double avgTime, double avgTimePerEdge) {
+        final double avgTime;
+        final double avgStdDev;
+        final double avgCoV;
+        final double avgP95;
+        final double avgTimePerEdge;
+        
+        AvgIterationStats(double avgTime, double avgStdDev, double avgCoV, 
+                         double avgP95, double avgTimePerEdge) {
             this.avgTime = avgTime;
+            this.avgStdDev = avgStdDev;
+            this.avgCoV = avgCoV;
+            this.avgP95 = avgP95;
             this.avgTimePerEdge = avgTimePerEdge;
         }
     }
