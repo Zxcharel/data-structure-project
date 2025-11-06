@@ -209,55 +209,43 @@ public class PrefixAutocompleteExperiment {
      * Prints per-graph timings and results, then a summary ranking by average time across the three queries.
      */
     public void runAllGraphsSampleShowcase(String csvPath, String preferredOrigin) throws IOException {
-        // Build graphs
+        // Build graphs (restricted set)
         CsvReader reader = new CsvReader();
         Map<String, Graph> graphs = new LinkedHashMap<>();
 
-        Graph trie = reader.readCsvAndBuildGraph(csvPath, RoutePartitionedTrieGraph::new);
-        graphs.put("RoutePartitionedTrieGraph", trie);
-
+        // 1) AdjacencyListGraph — Baseline
         Graph adj = reader.readCsvAndBuildGraph(csvPath); // defaults to AdjacencyListGraph
         graphs.put("AdjacencyListGraph", adj);
 
+        // 2) CSRGraph — Optimized
+        Graph baselineForCsr = reader.readCsvAndBuildGraph(csvPath);
+        Graph csr = new CSRGraph(baselineForCsr);
+        graphs.put("CSRGraph", csr);
+
+        // 3) SortedAdjacencyListGraph — Fastest
         Graph sortedAdj = reader.readCsvAndBuildGraph(csvPath, SortedAdjacencyListGraph::new);
         graphs.put("SortedAdjacencyListGraph", sortedAdj);
 
-        Graph linArr = reader.readCsvAndBuildGraph(csvPath, LinearArrayGraph::new);
-        graphs.put("LinearArrayGraph", linArr);
-
-        Graph dynArr = reader.readCsvAndBuildGraph(csvPath, DynamicArrayGraph::new);
-        graphs.put("DynamicArrayGraph", dynArr);
-
-        Graph dblList = reader.readCsvAndBuildGraph(csvPath, DoublyLinkedListGraph::new);
-        graphs.put("DoublyLinkedListGraph", dblList);
-
-        Graph circList = reader.readCsvAndBuildGraph(csvPath, CircularLinkedListGraph::new);
-        graphs.put("CircularLinkedListGraph", circList);
-
-        Graph halfEdge = reader.readCsvAndBuildGraph(csvPath, HalfEdgeGraph::new);
-        graphs.put("HalfEdgeGraph", halfEdge);
-
-        // MatrixGraph requires capacity; build using node count from adjacency graph
-        int matrixCap = Math.max(adj.nodeCount(), 1);
-        Graph matrix = new MatrixGraph(matrixCap);
-        reader.readCsvAndBuildGraph(csvPath, matrix);
-        graphs.put("MatrixGraph", matrix);
-
-        Graph euler = reader.readCsvAndBuildGraph(csvPath, EulerTourTreeGraph::new);
-        graphs.put("EulerTourTreeGraph", euler);
-
-        Graph linkCut = reader.readCsvAndBuildGraph(csvPath, LinkCutTreeGraph::new);
-        graphs.put("LinkCutTreeGraph", linkCut);
-
+        // 4) OffsetArrayGraph — CSR variant
         Graph off = reader.readCsvAndBuildGraph(csvPath, OffsetArrayGraph::new);
         if (off instanceof OffsetArrayGraph) {
             ((OffsetArrayGraph) off).finalizeCSR();
         }
         graphs.put("OffsetArrayGraph", off);
 
-        Graph baseline = reader.readCsvAndBuildGraph(csvPath); // for CSR backing
-        Graph csr = new CSRGraph(baseline);
-        graphs.put("CSRGraph", csr);
+        // 5) MatrixGraph — Comparison
+        int matrixCap = Math.max(adj.nodeCount(), 1);
+        Graph matrix = new MatrixGraph(matrixCap);
+        reader.readCsvAndBuildGraph(csvPath, matrix);
+        graphs.put("MatrixGraph", matrix);
+
+        // 6) RoutePartitionedTrieGraph — Specialized
+        Graph trie = reader.readCsvAndBuildGraph(csvPath, RoutePartitionedTrieGraph::new);
+        graphs.put("RoutePartitionedTrieGraph", trie);
+
+        // 7) HalfEdgeGraph — Optional
+        Graph halfEdge = reader.readCsvAndBuildGraph(csvPath, HalfEdgeGraph::new);
+        graphs.put("HalfEdgeGraph", halfEdge);
 
         // Choose fixed origin LHR if present; otherwise fall back to preferredOrigin, then any
         String origin;
@@ -313,6 +301,54 @@ public class PrefixAutocompleteExperiment {
         System.out.println("\n=== Summary: Query '" + q3 + "' (ms), fastest to slowest ===");
         for (Map.Entry<String, Double> e : r3) {
             System.out.println(String.format("%s: %.5f ms", e.getKey(), e.getValue()));
+        }
+
+        // Random workload: 10000 origin+prefix queries derived from adjacency graph
+        List<QueryPair> randomQueries = buildRandomOriginPrefixQueries(adj, 10000);
+        // Collect per-query runtimes for CSV
+        List<String[]> randomCsvRows = new ArrayList<>();
+        String[] randomHeaders = {"graph_type", "origin", "prefix", "runtime_ms", "memory_kb"};
+
+        List<RandomResult> randomRanking = new ArrayList<>();
+        for (Map.Entry<String, Graph> entry : graphs.entrySet()) {
+            String name = entry.getKey();
+            Graph g = entry.getValue();
+            List<Double> perQueryMs = measurePerQueryRuntimes(g, randomQueries);
+            double avg = perQueryMs.stream().mapToDouble(d -> d).average().orElse(0.0);
+            long memKb = measureGraphMemoryKbByRebuild(csvPath, name, adj.nodeCount());
+            randomRanking.add(new RandomResult(name, avg, memKb));
+
+            // Add rows
+            for (int i = 0; i < randomQueries.size(); i++) {
+                QueryPair q = randomQueries.get(i);
+                double ms = perQueryMs.get(i);
+                randomCsvRows.add(new String[]{
+                    name,
+                    q.origin,
+                    q.prefix,
+                    String.format("%.5f", ms),
+                    String.valueOf(memKb)
+                });
+            }
+        }
+        randomRanking.sort(Comparator.comparingDouble(r -> r.avgMs));
+        System.out.println("\n=== Summary: Random workload (10000 origin+prefix queries) (ms), fastest to slowest ===");
+        for (RandomResult r : randomRanking) {
+            System.out.println(String.format("%s: %.5f ms", r.name, r.avgMs));
+        }
+
+        // Write random workload CSV
+        String randomOut = "out/experiments/experiment5_prefix_autocomplete/random_workload.csv";
+        IOUtils.ensureParentDirectoryExists(randomOut);
+        IOUtils.writeCsv(randomOut, randomHeaders, randomCsvRows);
+        System.out.println("Random workload CSV written to: " + randomOut);
+
+        // Memory summary section (ascending by memory usage)
+        List<RandomResult> memoryRank = new ArrayList<>(randomRanking);
+        memoryRank.sort(Comparator.comparingLong(r -> r.memoryKb < 0 ? Long.MAX_VALUE : r.memoryKb));
+        System.out.println("\n=== Summary: Space usage (KB), smallest to largest ===");
+        for (RandomResult r : memoryRank) {
+            System.out.println(String.format("%s: %s", r.name, formatMemoryKb(r.memoryKb)));
         }
     }
 
@@ -455,6 +491,176 @@ public class PrefixAutocompleteExperiment {
         return sb.toString();
     }
     
+    private static class QueryPair {
+        final String origin;
+        final String prefix;
+        QueryPair(String origin, String prefix) { this.origin = origin; this.prefix = prefix; }
+    }
+    private static class RandomResult {
+        final String name;
+        final double avgMs;
+        final long memoryKb;
+        RandomResult(String name, double avgMs, long memoryKb) { this.name = name; this.avgMs = avgMs; this.memoryKb = memoryKb; }
+    }
+
+    private List<QueryPair> buildRandomOriginPrefixQueries(Graph baseGraph, int n) {
+        List<String> origins = baseGraph.nodes();
+        Random rng = new Random(42);
+        List<QueryPair> queries = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            // pick random origin with at least one neighbor
+            String origin;
+            List<Edge> neighbors;
+            do {
+                origin = origins.get(rng.nextInt(origins.size()));
+                neighbors = baseGraph.neighbors(origin);
+            } while (neighbors.isEmpty());
+            Edge e = neighbors.get(rng.nextInt(neighbors.size()));
+            String dest = e.getDestination();
+            int len = 1 + rng.nextInt(Math.min(3, dest.length()));
+            String prefix = dest.substring(0, len);
+            queries.add(new QueryPair(origin, prefix));
+        }
+        return queries;
+    }
+
+    private double measureAverageForQueries(Graph graph, List<QueryPair> queries) {
+        // Warmup over the random queries (not recorded)
+        for (QueryPair q : queries) {
+            if (graph instanceof RoutePartitionedTrieGraph) {
+                ((RoutePartitionedTrieGraph) graph).neighborsByPrefix(q.origin, q.prefix);
+            } else {
+                filterNeighborsByPrefix(graph.neighbors(q.origin), q.prefix);
+            }
+        }
+        // Measured pass
+        double sumMs = 0.0;
+        for (QueryPair q : queries) {
+            long start = System.nanoTime();
+            if (graph instanceof RoutePartitionedTrieGraph) {
+                ((RoutePartitionedTrieGraph) graph).neighborsByPrefix(q.origin, q.prefix);
+            } else {
+                filterNeighborsByPrefix(graph.neighbors(q.origin), q.prefix);
+            }
+            long ns = System.nanoTime() - start;
+            sumMs += ns / 1_000_000.0;
+        }
+        return sumMs / Math.max(1, queries.size());
+    }
+
+    private List<Double> measurePerQueryRuntimes(Graph graph, List<QueryPair> queries) {
+        // Warmup
+        for (QueryPair q : queries) {
+            if (graph instanceof RoutePartitionedTrieGraph) {
+                ((RoutePartitionedTrieGraph) graph).neighborsByPrefix(q.origin, q.prefix);
+            } else {
+                filterNeighborsByPrefix(graph.neighbors(q.origin), q.prefix);
+            }
+        }
+        // Measured per-query
+        List<Double> msList = new ArrayList<>(queries.size());
+        for (QueryPair q : queries) {
+            long start = System.nanoTime();
+            if (graph instanceof RoutePartitionedTrieGraph) {
+                ((RoutePartitionedTrieGraph) graph).neighborsByPrefix(q.origin, q.prefix);
+            } else {
+                filterNeighborsByPrefix(graph.neighbors(q.origin), q.prefix);
+            }
+            long ns = System.nanoTime() - start;
+            msList.add(ns / 1_000_000.0);
+        }
+        return msList;
+    }
+
+    private long estimateMemoryKb(Graph graph) {
+        try {
+            if (graph instanceof RoutePartitionedTrieGraph) {
+                return Math.max(0, ((RoutePartitionedTrieGraph) graph).getMemoryUsage() / 1024);
+            }
+            if (graph instanceof MatrixGraph) {
+                return Math.max(0, ((MatrixGraph) graph).getMemoryUsage() / 1024);
+            }
+            if (graph instanceof OffsetArrayGraph) {
+                try {
+                    // Some implementations expose getMemoryUsage; if not, fall through
+                    java.lang.reflect.Method m = graph.getClass().getMethod("getMemoryUsage");
+                    Object bytes = m.invoke(graph);
+                    if (bytes instanceof Number) return Math.max(0, ((Number) bytes).longValue() / 1024);
+                } catch (Exception ignored) {}
+            }
+        } catch (Exception ignored) {}
+        // Fallback rough estimate based on node/edge counts
+        long nodes = graph.nodeCount();
+        long edges = graph.edgeCount();
+        long estimateBytes = nodes * 50L + edges * 64L;
+        return Math.max(0, estimateBytes / 1024);
+    }
+
+    private String formatMemoryKb(long kb) {
+        return kb >= 0 ? kb + " KB" : "N/A";
+    }
+
+    private static Graph MEMORY_PIN; // prevent GC of last built graph during measurement
+
+    private long measureGraphMemoryKbByRebuild(String csvPath, String graphName, int matrixCap) {
+        try {
+            long bestKb = -1;
+            for (int attempt = 0; attempt < 3; attempt++) {
+                System.gc();
+                long before = usedHeap();
+                // Build fresh graph instance by name
+                CsvReader reader = new CsvReader();
+                Graph built;
+                switch (graphName) {
+                    case "AdjacencyListGraph":
+                        built = reader.readCsvAndBuildGraph(csvPath);
+                        break;
+                    case "CSRGraph": {
+                        Graph base = reader.readCsvAndBuildGraph(csvPath);
+                        built = new CSRGraph(base);
+                        break;
+                    }
+                    case "SortedAdjacencyListGraph":
+                        built = reader.readCsvAndBuildGraph(csvPath, SortedAdjacencyListGraph::new);
+                        break;
+                    case "OffsetArrayGraph": {
+                        Graph g = reader.readCsvAndBuildGraph(csvPath, OffsetArrayGraph::new);
+                        if (g instanceof OffsetArrayGraph) ((OffsetArrayGraph) g).finalizeCSR();
+                        built = g;
+                        break;
+                    }
+                    case "MatrixGraph": {
+                        Graph g = new MatrixGraph(Math.max(matrixCap, 1));
+                        reader.readCsvAndBuildGraph(csvPath, g);
+                        built = g;
+                        break;
+                    }
+                    case "RoutePartitionedTrieGraph":
+                        built = reader.readCsvAndBuildGraph(csvPath, RoutePartitionedTrieGraph::new);
+                        break;
+                    case "HalfEdgeGraph":
+                        built = reader.readCsvAndBuildGraph(csvPath, HalfEdgeGraph::new);
+                        break;
+                    default:
+                        built = reader.readCsvAndBuildGraph(csvPath);
+                }
+                // Pin to avoid GC
+                MEMORY_PIN = built;
+                long after = usedHeap(); // measure without forcing GC, graph retained by MEMORY_PIN
+                long deltaKb = Math.max(0, (after - before) / 1024);
+                if (deltaKb > bestKb) bestKb = deltaKb;
+            }
+            return bestKb;
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    private long usedHeap() {
+        Runtime rt = Runtime.getRuntime();
+        return rt.totalMemory() - rt.freeMemory();
+    }
+
     
     private Map<String, List<String>> generatePrefixes(Graph graph, List<String> origins, int nPrefixes) {
         Map<String, List<String>> prefixesByOrigin = new HashMap<>();
