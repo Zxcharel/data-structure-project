@@ -11,7 +11,7 @@ This experiment isolates and measures the most critical operation in Dijkstra's 
 
 ---
 
-## Why This Experiment is Most Interesting
+## Why This Experiment is Interesting
 
 ### Directly Targets the Bottleneck
 - `graph.neighbors()` is called once per visited node in Dijkstra's algorithm
@@ -39,80 +39,113 @@ This experiment isolates and measures the most critical operation in Dijkstra's 
 
 ---
 
-## Methodology
+## Methodology: Two-Phase Approach
 
-### Isolation Approach
-1. **Direct Measurement**: Time `graph.neighbors(node)` calls in isolation
-2. **Within-Dijkstra Tracking**: Instrument Dijkstra to track time spent in neighbor iteration
-3. **Bulk Testing**: Test neighbor iteration for all nodes in the graph
-4. **Degree-Based Analysis**: Categorize by node degree (edges per node)
+### Phase 1: Baseline Control (Control Group)
+**Purpose**: Establish precise baseline performance with deep statistics
 
-### Test Cases
+1. **Query Selection**: 3 specific representative queries
+   - 1 SMALL query (sparse node: 1-5 edges)
+   - 1 MEDIUM query (medium node: 10-20 edges)
+   - 1 BIG query (dense node: 50+ edges)
 
-#### Node Degree Categories
+2. **Iterations**: 1000 runs per query
+   - Very high statistical power (n=1000)
+   - Low standard error
+   - Precise measurements
+
+3. **Purpose**: Serves as control group for comparison
+
+### Phase 2: Random Sampling (Validation)
+**Purpose**: Validate baseline across broad sample
+
+1. **Query Selection**: ~300 randomly sampled queries
+   - 100 sparse nodes
+   - 100 medium nodes
+   - 100 dense nodes
+
+2. **Iterations**: 1000 runs per query (same as baseline)
+   - Consistent statistical rigor
+   - Enables direct comparison with baseline
+
+3. **Purpose**: Validates that baseline is representative
+
+### Node Degree Categories
 1. **Sparse Nodes** (1-5 neighbors): 
-   - Represents typical airport connections
-   - Tests overhead for small edge lists
-   - Expected: Minimal differences, overhead dominates
+   - Small airports, limited routes
+   - Tests minimum overhead
+   - Example: Regional airports
 
 2. **Medium Nodes** (10-20 neighbors):
-   - Common for hub airports
-   - Tests moderate iteration performance
-   - Expected: Clear differences emerge
+   - Regional hubs
+   - Tests typical case
+   - Example: Mid-size hub airports
 
 3. **Dense Nodes** (50+ neighbors):
    - Major international hubs
-   - Tests iteration with many edges
-   - Expected: Largest performance gaps
+   - Tests worst-case performance
+   - Example: ORD, LAX, ATL
 
-#### Test Nodes Selection
-- Select representative nodes from each degree category
-- Ensure all graph structures have same nodes (for fair comparison)
-- Test each node multiple times (5-10 iterations) for statistical validity
-- Include nodes from different regions/types for variety
+### Statistical Rigor
+- **Warmup**: 10 iterations before measurement
+- **Delay**: 1ms between iterations to prevent JVM burst optimization
+- **Metrics**: Mean, StdDev, CoV, 95th percentile
+- **Total Measurements**: ~2.1 million (7 graphs × 303 queries × 1000 iterations)
 
 ---
 
 ## Metrics Collected
 
-### Primary Metrics
+### Primary Metrics (Per Query)
 
-1. **Single Node Iteration Time (nanoseconds)**:
-   - Time to call `graph.neighbors(node)` and iterate all edges
-   - Measured multiple times per node (average reported)
-   - Includes edge object creation overhead
+With n=1000 iterations per query, all metrics are highly precise:
 
-2. **Aggregate Iteration Time**:
-   - Total time spent in `graph.neighbors()` during complete Dijkstra run
-   - Measured by instrumenting Dijkstra's algorithm
-   - Percentage of total Dijkstra runtime
+1. **Average Iteration Time (ns)**:
+   - Mean time to call `graph.neighbors(node)`
+   - Very low standard error with n=1000
+   - Central tendency measure
 
-3. **Iteration Time Per Edge**:
-   - Single node time divided by number of edges
-   - Normalizes for node degree
-   - Shows overhead per edge
+2. **Standard Deviation (ns)**:
+   - Variation in measurements
+   - Shows consistency of performance
+   - Used to calculate confidence intervals
 
-4. **Percentage of Dijkstra Time**:
-   - Neighbor iteration time / total Dijkstra time
-   - Shows how much of algorithm is spent in this operation
-   - Expected: 60-80% for most structures
+3. **Coefficient of Variation (%)**:
+   - (StdDev / Mean) × 100
+   - Measures relative consistency
+   - Lower = more consistent/reliable
+
+4. **95th Percentile (ns)**:
+   - Worst-case boundary
+   - Shows outlier behavior
+   - Important for latency-sensitive applications
+
+5. **Time Per Edge (ns)**:
+   - Average time divided by node degree
+   - Normalizes for different node sizes
+   - Enables fair comparison across categories
+
+6. **Phase Label**:
+   - "BASELINE" or "RANDOM"
+   - Identifies control vs validation measurements
+   - Enables phase-specific analysis
 
 ### Secondary Metrics
 
-1. **Cache Performance Indicators**:
-   - Sequential access patterns (array-based) vs random access (list-based)
-   - Memory locality measurements (if possible)
-   - Cache miss estimates (theoretical)
+1. **Within-Dijkstra Percentage**:
+   - % of total Dijkstra time spent in neighbors()
+   - Confirms bottleneck hypothesis
+   - Expected: 60-80%
 
-2. **Degree-Specific Performance**:
-   - Iteration time vs node degree
-   - Identify break-even points (when one structure becomes better)
-   - Performance curves (linear, logarithmic, etc.)
+2. **Degree Correlation**:
+   - How iteration time scales with degree
+   - Linear, constant, or other pattern
+   - Reveals algorithmic complexity
 
-3. **Consistency**:
-   - Variance in iteration times
-   - Predictability of performance
-   - Outlier detection
+3. **Phase Comparison**:
+   - Baseline vs Random sample statistics
+   - Validates representativeness
+   - Statistical significance testing
 
 ---
 
@@ -339,6 +372,60 @@ private List<TestNode> selectTestNodes(Graph graph) {
 2. **Rankings**: Ordered list of fastest to slowest
 3. **Performance Gaps**: Absolute and percentage differences
 4. **Consistency**: Variance in measurements
+
+---
+
+## Console Output
+
+When running the experiment, you'll see:
+
+```
+=== Experiment 3: Two-Phase Neighbor Iteration Performance ===
+Phase 1: Baseline Control (3 queries × 1000 iterations)
+Phase 2: Random Sampling (300 queries × 1000 iterations)
+
+Building all graph types from: data/cleaned_flights.csv
+Built 7 graph types
+
+=== PHASE 1: BASELINE CONTROL ===
+Selected baseline queries (control group):
+  • SMALL query:  BGR (degree: 3 edges)
+  • MEDIUM query: DAL (degree: 15 edges)
+  • BIG query:    ORD (degree: 82 edges)
+
+  Iterations per query: 1000 (deep statistics)
+
+Testing CSRGraph [BASELINE]...
+Testing SortedAdjacencyListGraph [BASELINE]...
+...
+
+=== PHASE 2: RANDOM SAMPLING ===
+Random sample validation:
+  Sparse nodes:  100 nodes
+  Medium nodes:  100 nodes
+  Dense nodes:   100 nodes
+  Total queries: 300
+  Iterations per query: 1000 (same depth as baseline)
+
+  Example random nodes:
+    Sparse:  ACK (degree: 2)
+    Medium:  PHX (degree: 18)
+    Dense:   LAX (degree: 95)
+    ... and 297 more
+
+Testing CSRGraph [RANDOM]...
+...
+
+Phase Summary:
+  Baseline: 3 queries × 1000 iterations = 21 measurements
+  Random: 300 queries × 1000 iterations = 2,100 measurements
+```
+
+**Key Information Displayed:**
+- Exact nodes selected for baseline control
+- Node degrees (number of edges)
+- Sample sizes for each phase
+- Phase labels throughout execution
 
 ---
 

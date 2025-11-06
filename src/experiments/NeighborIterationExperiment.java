@@ -9,12 +9,13 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Experiment 3: Neighbor Iteration Performance (MOST INTERESTING)
+ * Experiment 3: Neighbor Iteration Performance
  * 
  * Isolates and measures the most critical operation in Dijkstra's algorithm:
  * graph.neighbors(node). This method is called thousands of times during 
  * pathfinding, making it the primary performance bottleneck.
  */
+
 public class NeighborIterationExperiment {
     
     private static final String DEFAULT_CSV_PATH = "data/cleaned_flights.csv";
@@ -29,7 +30,7 @@ public class NeighborIterationExperiment {
     
     // Common settings
     private static final int WARMUP_ITERATIONS = 10;
-    private static final long DELAY_MS = 1;
+    private static final long DELAY_MS = 0; 
     private static final Random random = new Random(42);
     
     /**
@@ -49,11 +50,21 @@ public class NeighborIterationExperiment {
         // Phase 1: Baseline Control
         System.out.println("=== PHASE 1: BASELINE CONTROL ===");
         Map<String, List<String>> baselineNodes = selectBaselineNodes(baseGraph);
-        System.out.println("Selected baseline queries:");
-        System.out.println("  Small (sparse): " + baselineNodes.get("sparse").size() + " node(s)");
-        System.out.println("  Medium: " + baselineNodes.get("medium").size() + " node(s)");
-        System.out.println("  Big (dense): " + baselineNodes.get("dense").size() + " node(s)");
-        System.out.println("  Iterations per query: " + BASELINE_ITERATIONS);
+        System.out.println("Selected baseline queries (control group):");
+        
+        for (String node : baselineNodes.get("sparse")) {
+            int degree = baseGraph.neighbors(node).size();
+            System.out.println("  • SMALL query:  " + node + " (degree: " + degree + " edges)");
+        }
+        for (String node : baselineNodes.get("medium")) {
+            int degree = baseGraph.neighbors(node).size();
+            System.out.println("  • MEDIUM query: " + node + " (degree: " + degree + " edges)");
+        }
+        for (String node : baselineNodes.get("dense")) {
+            int degree = baseGraph.neighbors(node).size();
+            System.out.println("  • BIG query:    " + node + " (degree: " + degree + " edges)");
+        }
+        System.out.println("\n  Iterations per query: " + BASELINE_ITERATIONS + " (deep statistics)");
         System.out.println();
         
         Map<String, List<IterationResult>> baselineResults = runPhase(graphs, baselineNodes, 
@@ -62,12 +73,35 @@ public class NeighborIterationExperiment {
         // Phase 2: Random Sampling
         System.out.println("\n=== PHASE 2: RANDOM SAMPLING ===");
         Map<String, List<String>> randomNodes = selectRandomNodes(baseGraph);
-        System.out.println("Selected random samples:");
-        System.out.println("  Sparse: " + randomNodes.get("sparse").size() + " nodes");
-        System.out.println("  Medium: " + randomNodes.get("medium").size() + " nodes");
-        System.out.println("  Dense: " + randomNodes.get("dense").size() + " nodes");
-        System.out.println("  Iterations per query: " + RANDOM_ITERATIONS);
-        System.out.println();
+        System.out.println("Random sample validation:");
+        System.out.println("  Sparse nodes:  " + randomNodes.get("sparse").size() + " nodes");
+        System.out.println("  Medium nodes:  " + randomNodes.get("medium").size() + " nodes");
+        System.out.println("  Dense nodes:   " + randomNodes.get("dense").size() + " nodes");
+        System.out.println("  Total queries: " + (randomNodes.get("sparse").size() + 
+                                                   randomNodes.get("medium").size() + 
+                                                   randomNodes.get("dense").size()));
+        System.out.println("  Iterations per query: " + RANDOM_ITERATIONS + " (same depth as baseline)");
+        
+        // Show examples from random sample
+        System.out.println("\n  Example random nodes:");
+        if (!randomNodes.get("sparse").isEmpty()) {
+            String example = randomNodes.get("sparse").get(0);
+            int degree = baseGraph.neighbors(example).size();
+            System.out.println("    Sparse:  " + example + " (degree: " + degree + ")");
+        }
+        if (!randomNodes.get("medium").isEmpty()) {
+            String example = randomNodes.get("medium").get(0);
+            int degree = baseGraph.neighbors(example).size();
+            System.out.println("    Medium:  " + example + " (degree: " + degree + ")");
+        }
+        if (!randomNodes.get("dense").isEmpty()) {
+            String example = randomNodes.get("dense").get(0);
+            int degree = baseGraph.neighbors(example).size();
+            System.out.println("    Dense:   " + example + " (degree: " + degree + ")");
+        }
+        System.out.println("    ... and " + (randomNodes.get("sparse").size() + 
+                                            randomNodes.get("medium").size() + 
+                                            randomNodes.get("dense").size() - 3) + " more\n");
         
         Map<String, List<IterationResult>> randomResults = runPhase(graphs, randomNodes, 
                                                                      RANDOM_ITERATIONS, "RANDOM");
