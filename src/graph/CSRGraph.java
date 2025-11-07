@@ -27,6 +27,8 @@ public class CSRGraph implements Graph {
     private String[] edgeDests;     // All edge destinations
     private double[] edgeWeights;   // All edge weights
     private String[] edgeAirlines;  // All airline names
+    private Edge[] edges;           // Cached edge objects for zero-copy neighbor views
+    private List<Edge>[] neighborViews; // Pre-built neighbor list views per node
     
     private int numNodes;
     private int numEdges;
@@ -94,6 +96,10 @@ public class CSRGraph implements Graph {
         edgeDests = new String[numEdges];
         edgeWeights = new double[numEdges];
         edgeAirlines = new String[numEdges];
+        edges = new Edge[numEdges];
+        @SuppressWarnings("unchecked")
+        List<Edge>[] views = (List<Edge>[]) new List<?>[numNodes];
+        neighborViews = views;
         
         // Second pass: fill edge arrays
         for (String node : graph.nodes()) {
@@ -101,12 +107,19 @@ public class CSRGraph implements Graph {
             int edgeStart = rowPtr[nodeIndex];
             
             List<Edge> neighbors = graph.neighbors(node);
-            for (int i = 0; i < neighbors.size(); i++) {
+            int neighborCount = neighbors.size();
+            for (int i = 0; i < neighborCount; i++) {
                 Edge edge = neighbors.get(i);
-                edgeDests[edgeStart + i] = edge.getDestination();
-                edgeWeights[edgeStart + i] = edge.getWeight();
-                edgeAirlines[edgeStart + i] = edge.getAirline();
+                int targetIndex = edgeStart + i;
+                edgeDests[targetIndex] = edge.getDestination();
+                edgeWeights[targetIndex] = edge.getWeight();
+                edgeAirlines[targetIndex] = edge.getAirline();
+                edges[targetIndex] = edge;
             }
+
+            neighborViews[nodeIndex] = neighborCount == 0
+                ? Collections.emptyList()
+                : new NeighborView(edges, edgeStart, neighborCount);
         }
     }
     
@@ -139,24 +152,11 @@ public class CSRGraph implements Graph {
     public List<Edge> neighbors(String node) {
         Integer nodeIndex = nodeToIndex.get(node);
         if (nodeIndex == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
-        
-        int edgeStart = rowPtr[nodeIndex];
-        int edgeEnd = rowPtr[nodeIndex + 1];
-        int numNeighbors = edgeEnd - edgeStart;
-        
-        List<Edge> neighbors = new ArrayList<>(numNeighbors);
-        for (int i = edgeStart; i < edgeEnd; i++) {
-            neighbors.add(new Edge(
-                edgeDests[i],
-                edgeAirlines[i],
-                0, 0, 0, 0, 0,
-                edgeWeights[i]
-            ));
-        }
-        
-        return neighbors;
+
+        List<Edge> view = neighborViews[nodeIndex];
+        return view != null ? view : Collections.emptyList();
     }
     
     @Override
@@ -218,6 +218,31 @@ public class CSRGraph implements Graph {
     public String toString() {
         return String.format("CSRGraph{nodes=%d, edges=%d, memory=%d bytes}",
                            numNodes, numEdges, getMemoryUsage());
+    }
+
+    private static final class NeighborView extends AbstractList<Edge> {
+        private final Edge[] edges;
+        private final int start;
+        private final int length;
+
+        NeighborView(Edge[] edges, int start, int length) {
+            this.edges = edges;
+            this.start = start;
+            this.length = length;
+        }
+
+        @Override
+        public Edge get(int index) {
+            if (index < 0 || index >= length) {
+                throw new IndexOutOfBoundsException(index);
+            }
+            return edges[start + index];
+        }
+
+        @Override
+        public int size() {
+            return length;
+        }
     }
 }
 
