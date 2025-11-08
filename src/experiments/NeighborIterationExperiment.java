@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Experiment 3: Neighbor Iteration Performance
+ * Experiment 1: Neighbor Iteration Performance
  * 
  * Isolates and measures the most critical operation in Dijkstra's algorithm:
  * graph.neighbors(node). This method is called thousands of times during 

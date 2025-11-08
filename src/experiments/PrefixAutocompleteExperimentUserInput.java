@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Experiment 5: Prefix Autocomplete on Outgoing Routes
+ * Experiment 3: Prefix Autocomplete on Outgoing Routes
  * 
  * Tests when tries beat arrays: prefix autocomplete performance comparing
  * RoutePartitionedTrieGraph against traditional array/list/CSR structures.

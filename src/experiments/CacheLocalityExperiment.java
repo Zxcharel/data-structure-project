@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Experiment 2: Memory Layout vs Algorithm Optimization (CSR vs Adjacency Lists)
+ * Experiment 4: Memory Layout vs Algorithm Optimization (CSR vs Adjacency Lists)
  * 
  * Tests whether cache-friendly memory layout (CSR) outperforms pointer-based 
  * structures (Adjacency Lists) even when algorithmic overhead exists.
