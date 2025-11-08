@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Experiment 3: The Graph Size Deception
+ * Experiment 4: The Graph Size Deception
  * Tests how graph implementations scale across different graph sizes.
  * 
  * Title: When Bigger Graphs Make Smaller Structures Slower: The Scaling Paradox

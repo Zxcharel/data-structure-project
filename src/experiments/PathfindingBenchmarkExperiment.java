@@ -10,7 +10,7 @@ import java.util.*;
 import java.util.function.Supplier;
 
 /**
- * Experiment 1.1: High-Resolution Pathfinding Performance Benchmark
+ * Experiment 1: High-Resolution Pathfinding Performance Benchmark
  * 
  * Enhanced version with:
  * - NanoTime precision timing
