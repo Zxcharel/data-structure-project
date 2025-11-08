@@ -27,7 +27,7 @@ public class CacheLocalityExperiment {
      * Runs the cache locality experiment
      */
     public void runExperiment(String csvPath, int numQueries, String outputDir) throws IOException {
-        System.out.println("=== Experiment 2: Cache Locality (CSR vs Adjacency Lists) ===");
+        System.out.println("=== Experiment 4: Cache Locality (CSR vs Adjacency Lists) ===");
         System.out.println("Building graphs from: " + csvPath);
         
         // Build both graph types
@@ -309,7 +309,7 @@ public class CacheLocalityExperiment {
         CacheLocalityExperiment exp = new CacheLocalityExperiment();
         String csvPath = args.length > 0 ? args[0] : DEFAULT_CSV_PATH;
         int numQueries = args.length > 1 ? Integer.parseInt(args[1]) : 100;
-        String outputDir = args.length > 2 ? args[2] : "out/experiments/experiment2_cache_locality";
+        String outputDir = args.length > 2 ? args[2] : "out/experiments/experiment4_cache_locality";
         exp.runExperiment(csvPath, numQueries, outputDir);
     }
 }

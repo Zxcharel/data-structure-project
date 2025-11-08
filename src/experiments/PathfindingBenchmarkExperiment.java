@@ -31,7 +31,7 @@ public class PathfindingBenchmarkExperiment {
      * Runs the enhanced pathfinding benchmark experiment
      */
     public void runBenchmark(String csvPath, int numQueries, String outputDir) throws IOException {
-        System.out.println("=== Experiment 1.1: High-Resolution Pathfinding Performance Benchmark ===");
+        System.out.println("=== Experiment 5.1: High-Resolution Pathfinding Performance Benchmark ===");
         System.out.println("Building all graph types from: " + csvPath);
         
         // Build all graph types with memory measurement
@@ -309,7 +309,7 @@ public class PathfindingBenchmarkExperiment {
     
     private void writeEnhancedSummaryReport(Map<String, List<QueryResult>> results, String outputPath) throws IOException {
         StringBuilder report = new StringBuilder();
-        report.append("# Experiment 1.1: High-Resolution Pathfinding Performance Benchmark - Summary\n\n");
+        report.append("# Experiment 5.1: High-Resolution Pathfinding Performance Benchmark - Summary\n\n");
         
         Map<String, EnhancedGraphStats> stats = new HashMap<>();
         for (Map.Entry<String, List<QueryResult>> entry : results.entrySet()) {
@@ -476,7 +476,7 @@ public class PathfindingBenchmarkExperiment {
         PathfindingBenchmarkExperiment exp = new PathfindingBenchmarkExperiment();
         String csvPath = args.length > 0 ? args[0] : DEFAULT_CSV_PATH;
         int numQueries = args.length > 1 ? Integer.parseInt(args[1]) : NUM_QUERIES;
-        String outputDir = args.length > 2 ? args[2] : "out/experiments/experiment1_benchmark";
+        String outputDir = args.length > 2 ? args[2] : "out/experiments/experiment5_benchmark";
         exp.runBenchmark(csvPath, numQueries, outputDir);
     }
 }

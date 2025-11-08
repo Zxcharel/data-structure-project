@@ -32,7 +32,7 @@ public class ScalingExperiment {
      * @throws IOException if files cannot be written
      */
     public void run(String csvPath, String outputDir) throws IOException {
-        System.out.println("=== Experiment 4: The Graph Size Deception ===");
+        System.out.println("=== Experiment 2: The Graph Size Deception ===");
         System.out.println("Reading graph from CSV: " + csvPath + "\n");
         
         CsvReader reader = new CsvReader();

@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Experiment 5: Prefix Autocomplete on Outgoing Routes
+ * Experiment 3: Prefix Autocomplete on Outgoing Routes
  * 
  * Tests when tries beat arrays: prefix autocomplete performance comparing
  * RoutePartitionedTrieGraph against traditional array/list/CSR structures.
@@ -28,7 +28,7 @@ public class PrefixAutocompleteExperiment {
      * @throws IOException if files cannot be read or written
      */
     public void runExperiment(String csvPath, int graphTypeChoice, int nPrefixes, String outputDir) throws IOException {
-        System.out.println("=== Experiment 5: Prefix Autocomplete on Outgoing Routes ===");
+        System.out.println("=== Experiment 3: Prefix Autocomplete on Outgoing Routes ===");
         System.out.println("Reading graph from CSV: " + csvPath + "\n");
         
         // Load graph from CSV based on choice
@@ -338,7 +338,7 @@ public class PrefixAutocompleteExperiment {
         }
 
         // Write random workload CSV
-        String randomOut = "out/experiments/experiment5_prefix_autocomplete/random_workload.csv";
+        String randomOut = "out/experiments/experiment3_prefix_autocomplete/random_workload.csv";
         IOUtils.ensureParentDirectoryExists(randomOut);
         IOUtils.writeCsv(randomOut, randomHeaders, randomCsvRows);
         System.out.println("Random workload CSV written to: " + randomOut);

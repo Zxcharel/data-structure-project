@@ -37,7 +37,7 @@ public class NeighborIterationExperiment {
      * Runs the neighbor iteration experiment
      */
     public void runExperiment(String csvPath, String outputDir) throws IOException {
-        System.out.println("=== Experiment 3: Two-Phase Neighbor Iteration Performance ===");
+        System.out.println("=== Experiment 1: Two-Phase Neighbor Iteration Performance ===");
         System.out.println("Phase 1: Baseline Control (3 queries × 1000 iterations)");
         System.out.println("Phase 2: Random Sampling (300 queries × 1000 iterations)");
         System.out.println("\nBuilding all graph types from: " + csvPath);
@@ -564,7 +564,7 @@ public class NeighborIterationExperiment {
     public static void main(String[] args) throws IOException {
         NeighborIterationExperiment exp = new NeighborIterationExperiment();
         String csvPath = args.length > 0 ? args[0] : DEFAULT_CSV_PATH;
-        String outputDir = args.length > 1 ? args[1] : "out/experiments/experiment3_neighbor_iteration";
+        String outputDir = args.length > 1 ? args[1] : "out/experiments/experiment1_neighbor_iteration";
         exp.runExperiment(csvPath, outputDir);
     }
 }
