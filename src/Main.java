@@ -248,11 +248,11 @@ public class Main {
     private static void runExperiments() {
         System.out.println("=== Experiments: Graph Structure Comparison ===");
         System.out.println("Select an experiment to run:");
-        System.out.println("1. Experiment 1: Pathfinding Performance Benchmark");
-        System.out.println("2. Experiment 2: Cache Locality (CSR vs Adjacency Lists)");
-        System.out.println("3. Experiment 3: Neighbor Iteration Performance");
-        System.out.println("4. Experiment 4: The Graph Size Deception (Scaling)");
-        System.out.println("5. Experiment 5: Prefix Autocomplete (Trie vs Arrays)");
+        System.out.println("1. Experiment 1: Neighbor Iteration Performance");
+        System.out.println("2. Experiment 2: The Graph Size Deception (Scaling)");
+        System.out.println("3. Experiment 3: Prefix Autocomplete (Trie vs Arrays)");
+        System.out.println("4. Experiment 4: Cache Locality (CSR vs Adjacency Lists)");
+        System.out.println("5. Experiment 5: Pathfinding Performance Benchmark");
         System.out.println("6. Run all experiments");
         System.out.println("7. Back to main menu");
 
@@ -305,97 +305,101 @@ public class Main {
     }
     
     /**
-     * Runs Experiment 1: Pathfinding Performance Benchmark
+     * Runs Experiment 1: Neighbor Iteration Performance
      */
     private static void runExperiment1() throws IOException {
-        System.out.println("\n=== Running Experiment 1: Pathfinding Performance Benchmark ===");
+        System.out.println("\n=== Running Experiment 1: Neighbor Iteration Performance ===");
         String csvPath = "data/cleaned_flights.csv";
-        
-        int numQueries = getIntInput("Number of test queries (default 100): ");
-        if (numQueries <= 0) {
-            numQueries = 100;
-        }
-        
-        String outputDir = "out/experiments/experiment1_pathfinding_benchmark";
-        
-        PathfindingBenchmarkExperiment experiment = 
-            new PathfindingBenchmarkExperiment();
-        experiment.runBenchmark(csvPath, numQueries, outputDir);
-        
-        System.out.println("\n✅ Experiment 1 completed!");
-        System.out.println("Results written to: " + outputDir);
-    }
-    
-    /**
-     * Runs Experiment 2: Cache Locality (CSR vs Adjacency Lists)
-     */
-    private static void runExperiment2() throws IOException {
-        System.out.println("\n=== Running Experiment 2: Cache Locality (CSR vs Adjacency Lists) ===");
-        String csvPath = "data/cleaned_flights.csv";
-        
-        int numQueries = getIntInput("Number of test queries (default 100): ");
-        if (numQueries <= 0) {
-            numQueries = 100;
-        }
-        
-        String outputDir = "out/experiments/experiment2_cache_locality";
-        
-        CacheLocalityExperiment experiment = 
-            new CacheLocalityExperiment();
-        experiment.runExperiment(csvPath, numQueries, outputDir);
-        
-        System.out.println("\n✅ Experiment 2 completed!");
-        System.out.println("Results written to: " + outputDir);
-    }
-    
-    /**
-     * Runs Experiment 3: Neighbor Iteration Performance
-     */
-    private static void runExperiment3() throws IOException {
-        System.out.println("\n=== Running Experiment 3: Neighbor Iteration Performance ===");
-        String csvPath = "data/cleaned_flights.csv";
-        String outputDir = "out/experiments/experiment3_neighbor_iteration";
-        
-        NeighborIterationExperiment experiment = 
+        String outputDir = "out/experiments/experiment1_neighbor_iteration";
+
+        NeighborIterationExperiment experiment =
             new NeighborIterationExperiment();
         experiment.runExperiment(csvPath, outputDir);
-        
-        System.out.println("\n✅ Experiment 3 completed!");
+
+        System.out.println("\n✅ Experiment 1 completed!");
         System.out.println("Results written to: " + outputDir);
+
+
+        
     }
     
     /**
-     * Runs Experiment 4: The Graph Size Deception (Scaling Experiment)
+     * Runs Experiment 2: The Graph Size Deception (Scaling Experiment)
      */
-    private static void runExperiment4() throws IOException {
-        System.out.println("\n=== Running Experiment 4: The Graph Size Deception ===");
+    private static void runExperiment2() throws IOException {
+        System.out.println("\n=== Running Experiment 2: The Graph Size Deception ===");
         String csvPath = "data/cleaned_flights.csv";
-        String outputDir = "out/experiments/experiment4_scaling";
+        String outputDir = "out/experiments/experiment2_scaling";
         
         ScalingExperiment experiment = new ScalingExperiment();
         experiment.run(csvPath, outputDir);
-        
-        System.out.println("\n✅ Experiment 4 completed!");
+
+        System.out.println("\n✅ Experiment 2 completed!");
         System.out.println("Results written to: " + outputDir);
+
     }
     
     /**
-     * Runs Experiment 5: Prefix Autocomplete
+     * Runs Experiment 3: Prefix Autocomplete 
      */
-    private static void runExperiment5() throws IOException {
-        System.out.println("\n=== Running Experiment 5: Prefix Autocomplete ===");
+    private static void runExperiment3() throws IOException {
+        System.out.println("\n=== Running Experiment 3: Prefix Autocomplete ===");
         String csvPath = "data/cleaned_flights.csv";
         
         // Run with defaults (trie forced in the experiment implementation)
         int graphChoice = 1;
         int nPrefixes = 100;
         
-        String outputDir = "out/experiments/experiment5_prefix_autocomplete";
+        String outputDir = "out/experiments/experiment3_prefix_autocomplete";
         
         PrefixAutocompleteExperiment experiment = new PrefixAutocompleteExperiment();
         experiment.runExperiment(csvPath, graphChoice, nPrefixes, outputDir);
         // Run the same three sample autocomplete queries across all graph types
         experiment.runAllGraphsSampleShowcase(csvPath, "SIN");
+        
+        System.out.println("\n✅ Experiment 3 completed!");
+        System.out.println("Results written to: " + outputDir);
+    }
+    
+    /**
+     * Runs Experiment 4: Cache Locality (CSR vs Adjacency Lists) 
+     */
+    private static void runExperiment4() throws IOException {
+        System.out.println("\n=== Running Experiment 4: Cache Locality (CSR vs Adjacency Lists) ===");
+        String csvPath = "data/cleaned_flights.csv";
+        
+        int numQueries = getIntInput("Number of test queries (default 100): ");
+        if (numQueries <= 0) {
+            numQueries = 100;
+        }
+        
+        String outputDir = "out/experiments/experiment4_cache_locality";
+        
+        CacheLocalityExperiment experiment = 
+            new CacheLocalityExperiment();
+        experiment.runExperiment(csvPath, numQueries, outputDir);
+        
+        System.out.println("\n✅ Experiment 4 completed!");
+        System.out.println("Results written to: " + outputDir);
+    }
+    
+    /**
+     * Runs Experiment 5: Pathfinding Performance Benchmark 
+     */
+    private static void runExperiment5() throws IOException {
+        System.out.println("\n=== Running Experiment 5: Pathfinding Performance Benchmark ===");
+        String csvPath = "data/cleaned_flights.csv";
+        
+        int numQueries = getIntInput("Number of test queries (default 100): ");
+        if (numQueries <= 0) {
+            numQueries = 100;
+        }
+        
+        String outputDir = "out/experiments/experiment5_pathfinding_benchmark";
+        
+        PathfindingBenchmarkExperiment experiment = 
+            new PathfindingBenchmarkExperiment();
+        experiment.runBenchmark(csvPath, numQueries, outputDir);
         
         System.out.println("\n✅ Experiment 5 completed!");
         System.out.println("Results written to: " + outputDir);
