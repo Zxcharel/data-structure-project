@@ -8,6 +8,7 @@ import java.util.*;
 /**
  * A* algorithm implementation for finding shortest paths in weighted graphs.
  * Uses a heuristic function to guide the search more efficiently than Dijkstra.
+ * We did not implement A* in this project because we felt that we were more familiar with Dijkstra instead.
  */
 public class AStar {
     

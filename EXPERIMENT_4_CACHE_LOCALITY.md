@@ -1,4 +1,4 @@
-# Experiment 2: Memory Layout vs Algorithm Optimization (CSR vs Adjacency Lists)
+# Experiment 4: Memory Layout vs Algorithm Optimization (CSR vs Adjacency Lists)
 
 **Algorithm**: Dijkstra's Algorithm  
 **Research Question**: Does cache-friendly memory layout (CSR) outperform pointer-based structures (Adjacency Lists) even when algorithmic overhead exists?

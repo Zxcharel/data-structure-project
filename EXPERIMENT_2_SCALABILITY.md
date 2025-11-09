@@ -1,4 +1,4 @@
-# Experiment 4: Scalability Analysis Across Graph Sizes
+# Experiment 2: Scalability Analysis Across Graph Sizes
 
 **Algorithm**: Dijkstra's Algorithm  
 **Research Question**: How do graph structures perform as graph size increases?

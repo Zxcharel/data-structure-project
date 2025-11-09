@@ -1,4 +1,4 @@
-# Experiment 1: Pathfinding Performance Benchmark
+# Experiment 5: Pathfinding Performance Benchmark
 
 **Algorithm**: Dijkstra's Algorithm  
 **Research Question**: How do different graph data structures affect Dijkstra's algorithm runtime and efficiency?

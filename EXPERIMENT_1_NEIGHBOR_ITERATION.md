@@ -1,4 +1,4 @@
-# Experiment 3: Neighbor Iteration Performance (MOST INTERESTING)
+# Experiment 1: Neighbor Iteration Performance (MOST INTERESTING)
 
 **Algorithm**: Dijkstra's Algorithm  
 **Research Question**: Which graph structure provides the fastest neighbor iteration (Dijkstra's bottleneck operation)?

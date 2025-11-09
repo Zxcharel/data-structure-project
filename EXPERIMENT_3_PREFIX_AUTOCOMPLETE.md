@@ -1,4 +1,4 @@
-# Experiment 5: Prefix Autocomplete on Outgoing Routes
+# Experiment 3: Prefix Autocomplete on Outgoing Routes
 
 **When Tries Beat Arrays: Prefix Autocomplete on Outgoing Routes**
 
